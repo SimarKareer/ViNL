@@ -28,32 +28,47 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from legged_gym import LEGGED_GYM_ROOT_DIR, LEGGED_GYM_ENVS_DIR
-from legged_gym.envs.a1.a1_config import A1RoughCfg, A1RoughCfgPPO
-from .base.legged_robot import LeggedRobot
+from legged_gym.envs import AliengoRoughCfg, AliengoRoughCfgPPO
 
-from .anymal_c.anymal import Anymal
-from .aliengo.aliengo import Aliengo
+class AliengoFlatCfg( AliengoRoughCfg ):
+    class env( AliengoRoughCfg.env ):
+        num_observations = 48
+  
+    class terrain( AliengoRoughCfg.terrain ):
+        mesh_type = 'plane'
+        measure_heights = False
+  
+    class asset( AliengoRoughCfg.asset ):
+        self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
 
-from .anymal_c.mixed_terrains.anymal_c_rough_config import AnymalCRoughCfg, AnymalCRoughCfgPPO
-from .aliengo.mixed_terrains.aliengo_rough_config import AliengoRoughCfg, AliengoRoughCfgPPO
+    class rewards( AliengoRoughCfg.rewards ):
+        max_contact_force = 350.
+        class scales ( AliengoRoughCfg.rewards.scales ):
+            orientation = -5.0
+            torques = -0.000025
+            feet_air_time = 2.
+            # feet_contact_forces = -0.01
+    
+    class commands( AliengoRoughCfg.commands ):
+        heading_command = False
+        resampling_time = 4.
+        class ranges( AliengoRoughCfg.commands.ranges ):
+            ang_vel_yaw = [-1.5, 1.5]
 
-from .anymal_c.flat.anymal_c_flat_config import AnymalCFlatCfg, AnymalCFlatCfgPPO
-from .aliengo.flat.aliengo_flat_config import AliengoFlatCfg, AliengoFlatCfgPPO
+    class domain_rand( AliengoRoughCfg.domain_rand ):
+        friction_range = [0., 1.5] # on ground planes the friction combination mode is averaging, i.e total friction = (foot_friction + 1.)/2.
 
-from .anymal_b.anymal_b_config import AnymalBRoughCfg, AnymalBRoughCfgPPO
-from .cassie.cassie import Cassie
-from .cassie.cassie_config import CassieRoughCfg, CassieRoughCfgPPO
-from .a1.a1_config import A1RoughCfg, A1RoughCfgPPO
+class AliengoFlatCfgPPO( AliengoRoughCfgPPO ):
+    class policy( AliengoRoughCfgPPO.policy ):
+        actor_hidden_dims = [128, 64, 32]
+        critic_hidden_dims = [128, 64, 32]
+        activation = 'elu' # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
 
+    class algorithm( AliengoRoughCfgPPO.algorithm):
+        entropy_coef = 0.01
 
-import os
-
-from legged_gym.utils.task_registry import task_registry
-
-task_registry.register( "anymal_c_rough", Anymal, AnymalCRoughCfg(), AnymalCRoughCfgPPO() )
-task_registry.register( "anymal_c_flat", Anymal, AnymalCFlatCfg(), AnymalCFlatCfgPPO() )
-task_registry.register( "aliengo_flat", Aliengo, AliengoFlatCfg(), AliengoFlatCfgPPO() )
-task_registry.register( "anymal_b", Anymal, AnymalBRoughCfg(), AnymalBRoughCfgPPO() )
-task_registry.register( "a1", LeggedRobot, A1RoughCfg(), A1RoughCfgPPO() )
-task_registry.register( "cassie", Cassie, CassieRoughCfg(), CassieRoughCfgPPO() )
+    class runner ( AliengoRoughCfgPPO.runner):
+        run_name = ''
+        experiment_name = 'flat_Aliengo'
+        load_run = -1
+        max_iterations = 300
