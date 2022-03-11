@@ -40,7 +40,8 @@ changes from a1 to aliengo
 
 class AliengoRoughCfg( LeggedRobotCfg ):
     class env( LeggedRobotCfg.env ):
-        num_envs = 4096
+        # num_envs = 4096
+        num_envs = 1024 # was getting a seg fault
         num_actions = 12
 
     class terrain( LeggedRobotCfg.terrain ):

@@ -47,6 +47,7 @@ class AliengoFlatCfg( AliengoRoughCfg ):
             orientation = -5.0
             torques = -0.000025
             feet_air_time = 2.
+            base_height = -1.0 # I added this reward to get the robot a high higher up
             # feet_contact_forces = -0.01
     
     class commands( AliengoRoughCfg.commands ):

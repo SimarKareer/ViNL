@@ -75,6 +75,18 @@ class LeggedRobot(BaseTask):
         self._init_buffers()
         self._prepare_reward_function()
         self.init_done = True
+        
+        # _rb_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
+        # rb_states = gymtorch.wrap_tensor(_rb_states)
+        # all_indices = torch.arange(len(rb_states))
+        # self.feet_indices = torch.cat([
+        #     all_indices[all_indices % 17 == 4],
+        #     all_indices[all_indices % 17 == 8],
+        #     all_indices[all_indices % 17 == 12],
+        #     all_indices[all_indices % 17 == 16]
+        # ])
+
+
 
     def step(self, actions):
         """ Apply actions, simulate, call self.post_physics_step()
@@ -647,6 +659,10 @@ class LeggedRobot(BaseTask):
 
         # save body names from the asset
         body_names = self.gym.get_asset_rigid_body_names(robot_asset)
+        print("body_names: ", body_names)
+
+
+
         self.dof_names = self.gym.get_asset_dof_names(robot_asset)
         self.num_bodies = len(body_names)
         self.num_dofs = len(self.dof_names)
@@ -671,6 +687,8 @@ class LeggedRobot(BaseTask):
         for i in range(self.num_envs):
             # create env instance
             env_handle = self.gym.create_env(self.sim, env_lower, env_upper, int(np.sqrt(self.num_envs)))
+
+
             pos = self.env_origins[i].clone()
             pos[:2] += torch_rand_float(-1., 1., (2,1), device=self.device).squeeze(1)
             start_pose.p = gymapi.Vec3(*pos)
@@ -686,7 +704,13 @@ class LeggedRobot(BaseTask):
             self.envs.append(env_handle)
             self.actor_handles.append(anymal_handle)
 
+            # actor_handle = self.gym.get_actor_handle(env_handle, 0)
+            # flfootidx = self.gym.find_actor_rigid_body_index(env_handle, actor_handle, "FL_foot", gymapi.DOMAIN_SIM)
+            # print("FLFOOT IDX", flfootidx)
+            # quit()
+
         self.feet_indices = torch.zeros(len(feet_names), dtype=torch.long, device=self.device, requires_grad=False)
+        print(feet_names)
         for i in range(len(feet_names)):
             self.feet_indices[i] = self.gym.find_actor_rigid_body_handle(self.envs[0], self.actor_handles[0], feet_names[i])
 
@@ -880,6 +904,15 @@ class LeggedRobot(BaseTask):
         return torch.exp(-ang_vel_error/self.cfg.rewards.tracking_sigma)
 
     def _reward_feet_air_time(self):
+        # _rb_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
+        # rb_states = gymtorch.wrap_tensor(_rb_states)
+
+        # print("RB_states shape: ", rb_states.shape)
+        # print("Z vals: ", rb_states[0:17, 2])
+
+        # quit()
+
+
         # Reward long steps
         # Need to filter the contacts because the contact reporting of PhysX is unreliable on meshes
         contact = self.contact_forces[:, self.feet_indices, 2] > 1.
@@ -891,6 +924,23 @@ class LeggedRobot(BaseTask):
         rew_airTime *= torch.norm(self.commands[:, :2], dim=1) > 0.1 #no reward for zero command
         self.feet_air_time *= ~contact_filt
         return rew_airTime
+    
+    def _reward_feet_obs_contact(self):
+
+        _rb_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
+        rb_states = gymtorch.wrap_tensor(_rb_states)
+        feet_heights = rb_states[self.feet_indices, 3]
+        contact = torch.logical_or(self.contact_forces[:, self.feet_indices, 2] > 1., self.contact_forces[:, self.feet_indices, 1] > 1.)
+        contact = torch.logical_or(contact, self.contact_forces[:, self.feet_indices, 0] > 1.)
+        contact_filt = torch.logical_or(contact, self.last_contacts) 
+        self.last_contacts = contact
+
+        feet_states = _rb_states[feet_ind]
+
+        
+        # contact_feet_height = 
+
+        # penalty = torch.sum(contact_feet_height)
     
     def _reward_stumble(self):
         # Penalize feet hitting vertical surfaces

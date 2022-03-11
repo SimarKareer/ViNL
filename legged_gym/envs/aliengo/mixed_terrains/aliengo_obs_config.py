@@ -35,19 +35,21 @@ changes from a1 to aliengo
 - pd gains
 - starting height
 - target height?
-- 
+- action scale
 """
 
-class AliengoRoughCfg( LeggedRobotCfg ):
+class AliengoObsCfg( LeggedRobotCfg ):
     class env( LeggedRobotCfg.env ):
-        num_envs = 4096
+        # num_envs = 4096
+        num_envs = 1024 # was getting a seg fault
         num_actions = 12
 
     class terrain( LeggedRobotCfg.terrain ):
+        terrain_proportions = [0., 0., 0., 0., 1.0]
         mesh_type = 'trimesh'
 
     class init_state( LeggedRobotCfg.init_state ):
-        pos = [0.0, 0.0, 0.42] # x,y,z [m]
+        pos = [0.0, 0.0, 0.38] # x,y,z [m]
         # rot = [0.707, 0.0, 0.0, -0.707] # x,y,z,w [quat]
         # default_joint_angles = { # = target angles [rad] when action = 0.0
         #     'FL_hip_joint': 0.0,   # [rad]
@@ -86,20 +88,20 @@ class AliengoRoughCfg( LeggedRobotCfg ):
     class control( LeggedRobotCfg.control ):
         # PD Drive parameters:
         control_type = 'P'
-        stiffness = {'joint': 20.}  # [N*m/rad]
-        # stiffness = {'joint': 1750.}  # [N*m/rad]
-        damping = {'joint': 0.5}     # [N*m*s/rad]
-        # damping = {'joint': 100.0}     # [N*m*s/rad]
+        # stiffness = {'joint': 20.}  # [N*m/rad]
+        stiffness = {'joint': 40.}  # [N*m/rad]
+        # damping = {'joint': 0.5}     # [N*m*s/rad]
+        damping = {'joint': 2.0}     # [N*m*s/rad]
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.25
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 4
 
     class asset( LeggedRobotCfg.asset ):
-        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/a1/urdf/a1.urdf"
+        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/aliengo/urdf/aliengo.urdf"
         foot_name = "foot"
         penalize_contacts_on = ["thigh", "calf"]
-        terminate_after_contacts_on = ["base", "trunk"]
+        terminate_after_contacts_on = ["base", "trunk", "hip"]
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
 
     class domain_rand( LeggedRobotCfg.domain_rand):
@@ -113,7 +115,7 @@ class AliengoRoughCfg( LeggedRobotCfg ):
         class scales( LeggedRobotCfg.rewards.scales ):
             pass
 
-class AliengoRoughCfgPPO( LeggedRobotCfgPPO ):
+class AliengoObsCfgPPO( LeggedRobotCfgPPO ):
     class runner( LeggedRobotCfgPPO.runner ):
         run_name = ''
         experiment_name = 'rough_aliengo'

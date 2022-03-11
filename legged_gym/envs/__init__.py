@@ -35,11 +35,12 @@ from .base.legged_robot import LeggedRobot
 from .anymal_c.anymal import Anymal
 from .aliengo.aliengo import Aliengo
 
-from .anymal_c.mixed_terrains.anymal_c_rough_config import AnymalCRoughCfg, AnymalCRoughCfgPPO
 from .aliengo.mixed_terrains.aliengo_rough_config import AliengoRoughCfg, AliengoRoughCfgPPO
-
-from .anymal_c.flat.anymal_c_flat_config import AnymalCFlatCfg, AnymalCFlatCfgPPO
 from .aliengo.flat.aliengo_flat_config import AliengoFlatCfg, AliengoFlatCfgPPO
+from .aliengo.mixed_terrains.aliengo_obs_config import AliengoObsCfg, AliengoObsCfgPPO
+
+from .anymal_c.mixed_terrains.anymal_c_rough_config import AnymalCRoughCfg, AnymalCRoughCfgPPO
+from .anymal_c.flat.anymal_c_flat_config import AnymalCFlatCfg, AnymalCFlatCfgPPO
 
 from .anymal_b.anymal_b_config import AnymalBRoughCfg, AnymalBRoughCfgPPO
 from .cassie.cassie import Cassie
@@ -54,6 +55,8 @@ from legged_gym.utils.task_registry import task_registry
 task_registry.register( "anymal_c_rough", Anymal, AnymalCRoughCfg(), AnymalCRoughCfgPPO() )
 task_registry.register( "anymal_c_flat", Anymal, AnymalCFlatCfg(), AnymalCFlatCfgPPO() )
 task_registry.register( "aliengo_flat", Aliengo, AliengoFlatCfg(), AliengoFlatCfgPPO() )
+task_registry.register( "aliengo_rough", Aliengo, AliengoRoughCfg(), AliengoRoughCfgPPO() )
+task_registry.register( "aliengo_obs", Aliengo, AliengoObsCfg(), AliengoObsCfgPPO() )
 task_registry.register( "anymal_b", Anymal, AnymalBRoughCfg(), AnymalBRoughCfgPPO() )
 task_registry.register( "a1", LeggedRobot, A1RoughCfg(), A1RoughCfgPPO() )
 task_registry.register( "cassie", Cassie, CassieRoughCfg(), CassieRoughCfgPPO() )
