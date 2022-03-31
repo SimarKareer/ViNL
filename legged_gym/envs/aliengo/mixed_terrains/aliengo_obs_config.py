@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -38,85 +38,84 @@ changes from a1 to aliengo
 - action scale
 """
 
-class AliengoObsCfg( LeggedRobotCfg ):
-    class env( LeggedRobotCfg.env ):
-        # num_envs = 4096
-        num_envs = 1024 # was getting a seg fault
+
+class AliengoObsCfg(LeggedRobotCfg):
+    class env(LeggedRobotCfg.env):
+        num_envs = 1024
+        # num_envs = 4096 # was getting a seg fault
+        # num_envs = 2
         num_actions = 12
 
-    class terrain( LeggedRobotCfg.terrain ):
-        terrain_proportions = [0., 0., 0., 0., 1.0]
-        mesh_type = 'trimesh'
+    class terrain(LeggedRobotCfg.terrain):
+        # terrain_proportions = [0.1, 0.1, 0.2, 0.2, 0.2, 0.2]
+        terrain_proportions = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+        mesh_type = "trimesh"
 
-    class init_state( LeggedRobotCfg.init_state ):
-        pos = [0.0, 0.0, 0.38] # x,y,z [m]
-        # rot = [0.707, 0.0, 0.0, -0.707] # x,y,z,w [quat]
-        # default_joint_angles = { # = target angles [rad] when action = 0.0
-        #     'FL_hip_joint': 0.0,   # [rad]
-        #     'RL_hip_joint': 0.0,   # [rad]
-        #     'FR_hip_joint': -0.0 ,  # [rad]
-        #     'RR_hip_joint': -0.0,   # [rad]
+    class init_state(LeggedRobotCfg.init_state):
+        pos = [0.0, 0.0, 0.38]  # x,y,z [m]
 
-        #     'FL_thigh_joint': 0.0,     # [rad]
-        #     'RL_thigh_joint': 0.0,  # [rad]
-        #     'FR_thigh_joint': 0.0,     # [rad]
-        #     'RR_thigh_joint': 0.0,  # [rad]
-
-        #     'FL_calf_joint': -0.0,   # [rad]
-        #     'RL_calf_joint': -0.0,    # [rad]
-        #     'FR_calf_joint': -0.0,  # [rad]
-        #     'RR_calf_joint': -0.0    # [rad]
-        # }
-
-        default_joint_angles = { # = target angles [rad] when action = 0.0
-            'FL_hip_joint': 0.1,   # [rad]
-            'RL_hip_joint': 0.1,   # [rad]
-            'FR_hip_joint': -0.1 ,  # [rad]
-            'RR_hip_joint': -0.1,   # [rad]
-
-            'FL_thigh_joint': 0.8,     # [rad]
-            'RL_thigh_joint': 1.,   # [rad]
-            'FR_thigh_joint': 0.8,     # [rad]
-            'RR_thigh_joint': 1.,   # [rad]
-
-            'FL_calf_joint': -1.5,   # [rad]
-            'RL_calf_joint': -1.5,    # [rad]
-            'FR_calf_joint': -1.5,  # [rad]
-            'RR_calf_joint': -1.5,    # [rad]
+        default_joint_angles = {  # = target angles [rad] when action = 0.0
+            "FL_hip_joint": 0.1,  # [rad]
+            "RL_hip_joint": 0.1,  # [rad]
+            "FR_hip_joint": -0.1,  # [rad]
+            "RR_hip_joint": -0.1,  # [rad]
+            "FL_thigh_joint": 0.8,  # [rad]
+            "RL_thigh_joint": 1.0,  # [rad]
+            "FR_thigh_joint": 0.8,  # [rad]
+            "RR_thigh_joint": 1.0,  # [rad]
+            "FL_calf_joint": -1.5,  # [rad]
+            "RL_calf_joint": -1.5,  # [rad]
+            "FR_calf_joint": -1.5,  # [rad]
+            "RR_calf_joint": -1.5,  # [rad]
         }
 
-    class control( LeggedRobotCfg.control ):
+    class control(LeggedRobotCfg.control):
         # PD Drive parameters:
-        control_type = 'P'
+        control_type = "P"
         # stiffness = {'joint': 20.}  # [N*m/rad]
-        stiffness = {'joint': 40.}  # [N*m/rad]
+        stiffness = {"joint": 40.0}  # [N*m/rad]
         # damping = {'joint': 0.5}     # [N*m*s/rad]
-        damping = {'joint': 2.0}     # [N*m*s/rad]
+        damping = {"joint": 2.0}  # [N*m*s/rad]
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.25
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 4
 
-    class asset( LeggedRobotCfg.asset ):
+    class asset(LeggedRobotCfg.asset):
         file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/aliengo/urdf/aliengo.urdf"
         foot_name = "foot"
         penalize_contacts_on = ["thigh", "calf"]
         terminate_after_contacts_on = ["base", "trunk", "hip"]
-        self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
+        self_collisions = 1  # 1 to disable, 0 to enable...bitwise filter
 
-    class domain_rand( LeggedRobotCfg.domain_rand):
+    class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_base_mass = True
-        added_mass_range = [-5., 5.]
-  
-    class rewards( LeggedRobotCfg.rewards ):
-        base_height_target = 0.5
-        max_contact_force = 500.
-        only_positive_rewards = True
-        class scales( LeggedRobotCfg.rewards.scales ):
-            pass
+        added_mass_range = [-5.0, 5.0]
 
-class AliengoObsCfgPPO( LeggedRobotCfgPPO ):
-    class runner( LeggedRobotCfgPPO.runner ):
-        run_name = ''
-        experiment_name = 'rough_aliengo'
+    class rewards(LeggedRobotCfg.rewards):
+        base_height_target = 0.5
+        max_contact_force = 500.0
+        only_positive_rewards = True
+
+        class scales(LeggedRobotCfg.rewards.scales):
+            feet_step = -1.0
+            feet_stumble = -1.0
+
+    class commands(LeggedRobotCfg.commands):
+        class ranges(LeggedRobotCfg.commands.ranges):
+            lin_vel_x = [0.7, 1.0]  # min max [m/s]
+            lin_vel_y = [0.0, 0.0]  # min max [m/s]
+            ang_vel_yaw = [-1.0, 1.0]  # min max [rad/s]
+            heading = [0.0, 0.0]
+
+    class noise(LeggedRobotCfg.noise):
+        add_noise = False
+
+
+class AliengoObsCfgPPO(LeggedRobotCfgPPO):
+    class runner(LeggedRobotCfgPPO.runner):
+        run_name = ""
+        experiment_name = "obs_aliengo"
         load_run = -1
+        resume = True
+        resume_path = "./logs/rough_aliengo/Mar17_14-15-38_/model_1500.pt"
