@@ -39,9 +39,9 @@ changes from a1 to aliengo
 """
 
 
-class AliengoObsCfg(LeggedRobotCfg):
+class AliengoLbcCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 1024
+        num_envs = 1
         # num_envs = 4096 # was getting a seg fault
         # num_envs = 2
         num_actions = 12
@@ -120,14 +120,16 @@ class AliengoObsCfg(LeggedRobotCfg):
         add_noise = False
 
 
-class AliengoObsCfgPPO(LeggedRobotCfgPPO):
+class AliengoLbcCfgPPO(LeggedRobotCfgPPO):
     class runner(LeggedRobotCfgPPO.runner):
-        run_name = "StepStumbleLongRun"
+        run_name = "CameraSetup"
         # run_name = ""
-        experiment_name = "obs_aliengo"
+        experiment_name = "lbc_aliengo"
         load_run = -1
         max_iterations = 10000  # number of policy updates
 
         resume = True
-        resume_path = "./logs/rough_aliengo/Mar17_14-15-38_/model_1500.pt"
+        resume_path = (
+            "./logs/obs_aliengo/Apr07_16-30-27_BaselineStepStumble/model_3000.pt"
+        )
         # resume_path = "./logs/obs_aliengo/Apr07_12-17-33_NoObsRewards/model_3000.pt"

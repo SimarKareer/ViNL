@@ -182,6 +182,12 @@ class LeggedRobotCfg(BaseConfig):
         base_height_target = 1.0
         max_contact_force = 100.0  # forces above this value are penalized
 
+    class evals:
+        feet_stumble = False
+        feet_step = False
+        crash_freq = False
+        any_contacts = False
+
     class normalization:
         class obs_scales:
             lin_vel = 2.0
@@ -277,4 +283,5 @@ class LeggedRobotCfgPPO(BaseConfig):
         load_run = -1  # -1 = last run
         checkpoint = -1  # -1 = last saved model
         resume_path = None  # updated from load_run and chkpt
+        eval_baseline = False
 

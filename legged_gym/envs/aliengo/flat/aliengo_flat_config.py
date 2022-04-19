@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -29,47 +29,64 @@
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
 from legged_gym.envs import AliengoRoughCfg, AliengoRoughCfgPPO
+import torch
 
-class AliengoFlatCfg( AliengoRoughCfg ):
-    class env( AliengoRoughCfg.env ):
+
+class AliengoFlatCfg(AliengoRoughCfg):
+    class env(AliengoRoughCfg.env):
         num_observations = 48
-  
-    class terrain( AliengoRoughCfg.terrain ):
-        mesh_type = 'plane'
-        measure_heights = False
-  
-    class asset( AliengoRoughCfg.asset ):
-        self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
 
-    class rewards( AliengoRoughCfg.rewards ):
-        max_contact_force = 350.
-        class scales ( AliengoRoughCfg.rewards.scales ):
+    class terrain(AliengoRoughCfg.terrain):
+        mesh_type = "plane"
+        measure_heights = False
+
+    class asset(AliengoRoughCfg.asset):
+        self_collisions = 0  # 1 to disable, 0 to enable...bitwise filter
+
+    class rewards(AliengoRoughCfg.rewards):
+        max_contact_force = 350.0
+
+        class scales(AliengoRoughCfg.rewards.scales):
             orientation = -5.0
             torques = -0.000025
-            feet_air_time = 2.
-            base_height = -1.0 # I added this reward to get the robot a high higher up
+            feet_air_time = 2.0
+            base_height = -1.0  # I added this reward to get the robot a high higher up
             # feet_contact_forces = -0.01
-    
-    class commands( AliengoRoughCfg.commands ):
+
+    class commands(AliengoRoughCfg.commands):
         heading_command = False
-        resampling_time = 4.
-        class ranges( AliengoRoughCfg.commands.ranges ):
-            ang_vel_yaw = [-1.5, 1.5]
+        resampling_time = 4.0
 
-    class domain_rand( AliengoRoughCfg.domain_rand ):
-        friction_range = [0., 1.5] # on ground planes the friction combination mode is averaging, i.e total friction = (foot_friction + 1.)/2.
+        class ranges(AliengoRoughCfg.commands.ranges):
+            lin_vel_x = [0.7, 1.0]  # min max [m/s]
+            lin_vel_y = [0.0, 0.0]  # min max [m/s]
+            ang_vel_yaw = [0.0, 0.0]  # min max [rad/s]
+            heading = [0, 0]
 
-class AliengoFlatCfgPPO( AliengoRoughCfgPPO ):
-    class policy( AliengoRoughCfgPPO.policy ):
+    class domain_rand(AliengoRoughCfg.domain_rand):
+        friction_range = [
+            0.0,
+            1.5,
+        ]  # on ground planes the friction combination mode is averaging, i.e total friction = (foot_friction + 1.)/2.
+
+
+class AliengoFlatCfgPPO(AliengoRoughCfgPPO):
+    class policy(AliengoRoughCfgPPO.policy):
         actor_hidden_dims = [128, 64, 32]
         critic_hidden_dims = [128, 64, 32]
-        activation = 'elu' # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+        activation = "elu"  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
 
-    class algorithm( AliengoRoughCfgPPO.algorithm):
+    class algorithm(AliengoRoughCfgPPO.algorithm):
         entropy_coef = 0.01
 
-    class runner ( AliengoRoughCfgPPO.runner):
-        run_name = ''
-        experiment_name = 'flat_Aliengo'
+    class runner(AliengoRoughCfgPPO.runner):
+        run_name = ""
+        experiment_name = "flat_Aliengo"
         load_run = -1
         max_iterations = 300
+
+        def baseline_policy(self, obs):
+            # print(obs)
+            return torch.zeros(12).view(1, 12)
+
+        # eval_baseline = True

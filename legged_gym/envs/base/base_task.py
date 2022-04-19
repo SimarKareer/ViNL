@@ -133,6 +133,8 @@ class BaseTask:
         raise NotImplementedError
 
     def render(self, sync_frame_time=True):
+        self.gym.render_all_camera_sensors(self.sim)
+
         if self.viewer:
             # check for window closed
             if self.gym.query_viewer_has_closed(self.viewer):

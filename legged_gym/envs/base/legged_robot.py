@@ -77,6 +77,7 @@ class LeggedRobot(BaseTask):
         if not self.headless:
             self.set_camera(self.cfg.viewer.pos, self.cfg.viewer.lookat)
         self._init_buffers()
+        self._prepare_eval_function()
         self._prepare_reward_function()
         self.init_done = True
 
@@ -107,6 +108,7 @@ class LeggedRobot(BaseTask):
             self.gym.set_dof_actuation_force_tensor(
                 self.sim, gymtorch.unwrap_tensor(self.torques)
             )
+            self.extras["torque"] = self.torques  # gymtorch.unwrap_tensor(self.torques)
             self.gym.simulate(self.sim)
             if self.device == "cpu":
                 self.gym.fetch_results(self.sim, True)
@@ -156,6 +158,7 @@ class LeggedRobot(BaseTask):
         # compute observations, rewards, resets, ...
         self.check_termination()
         self.compute_reward()
+        self.compute_eval()
         env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
         self.reset_idx(env_ids)
         self.compute_observations()  # in some cases a simulation step might be required to refresh some obs (for example body positions)
@@ -222,6 +225,13 @@ class LeggedRobot(BaseTask):
                 torch.mean(self.episode_sums[key][env_ids]) / self.max_episode_length_s
             )
             self.episode_sums[key][env_ids] = 0.0
+
+        for key in self.eval_sums.keys():
+            self.extras["episode"]["eval_" + key] = torch.mean(
+                self.eval_sums[key]
+            )  # / self.max_episode_length_s
+            self.eval_sums[key][:] = 0.0
+
         # log additional curriculum info
         if self.cfg.terrain.curriculum:
             self.extras["episode"]["terrain_level"] = torch.mean(
@@ -254,9 +264,29 @@ class LeggedRobot(BaseTask):
             self.rew_buf += rew
             self.episode_sums["termination"] += rew
 
+    def compute_eval(self):
+        """ Compute evals
+            Reports eval function values, not used in training.
+        """
+        for i in range(len(self.eval_functions)):
+            name = self.eval_names[i]
+            rew = self.eval_functions[i]()
+            self.eval_sums[name] += rew
+
     def compute_observations(self):
         """ Computes observations
         """
+        # print("lin vel shape: ", (self.base_lin_vel * self.obs_scales.lin_vel).shape)
+        # print("ang vel shape: ", (self.base_ang_vel * self.obs_scales.ang_vel).shape)
+        # print("gravity shape: ", (self.projected_gravity).shape)
+        # print("commands shape: ", (self.commands[:, :3] * self.commands_scale).shape)
+        # print(
+        #     "dof pos shape: ",
+        #     ((self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos).shape,
+        # )
+        # print("dof vel shape: ", (self.dof_vel * self.obs_scales.dof_vel).shape)
+        # print("actions shape: ", (self.actions).shape)
+        # exit()
         self.obs_buf = torch.cat(
             (
                 self.base_lin_vel * self.obs_scales.lin_vel,
@@ -799,6 +829,40 @@ class LeggedRobot(BaseTask):
             for name in self.reward_scales.keys()
         }
 
+    def _prepare_eval_function(self):
+        """ Prepares a list of reward functions, whcih will be called to compute the total reward.
+            Looks for self._reward_<REWARD_NAME>, where <REWARD_NAME> are names of all non zero reward scales in the cfg.
+        """
+        # remove zero scales
+        to_remove = []
+        for name, scale in self.eval_scales.items():
+            if not scale:
+                to_remove.append(name)
+        for name in to_remove:
+            self.eval_scales.pop(name)
+
+        # prepare list of functions
+        self.eval_functions = []
+        self.eval_names = []
+        for name, scale in self.eval_scales.items():
+            print(name, scale)
+            if name == "termination":
+                continue
+            self.eval_names.append(name)
+            name = "_eval_" + name
+            self.eval_functions.append(getattr(self, name))
+
+        # reward episode sums
+        self.eval_sums = {
+            name: torch.zeros(
+                self.num_envs,
+                dtype=torch.float,
+                device=self.device,
+                requires_grad=False,
+            )
+            for name in self.eval_scales.keys()
+        }
+
     def _create_ground_plane(self):
         """ Adds a ground plane to the simulation, sets friction and restitution based on the cfg.
         """
@@ -1048,6 +1112,7 @@ class LeggedRobot(BaseTask):
         self.dt = self.cfg.control.decimation * self.sim_params.dt
         self.obs_scales = self.cfg.normalization.obs_scales
         self.reward_scales = class_to_dict(self.cfg.rewards.scales)
+        self.eval_scales = class_to_dict(self.cfg.evals)
         self.command_ranges = class_to_dict(self.cfg.commands.ranges)
         if self.cfg.terrain.mesh_type not in ["heightfield", "trimesh"]:
             self.cfg.terrain.curriculum = False
@@ -1426,3 +1491,74 @@ class LeggedRobot(BaseTask):
             dim=1,
         )
 
+    # Eval Functions:
+    def _eval_feet_stumble(self):
+        # Penalize feet hitting vertical surfaces
+        ans = torch.any(
+            torch.norm(self.contact_forces[:, self.feet_indices, :2], dim=2)
+            > 5 * torch.abs(self.contact_forces[:, self.feet_indices, 2]),
+            dim=1,
+        )
+
+        return ans  # (num_robots)
+
+    def _eval_feet_step(self):
+        self.num_calls += 1
+
+        _rb_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
+        rb_states = gymtorch.wrap_tensor(_rb_states)
+
+        rb_states_3d = rb_states.reshape(self.num_envs, -1, rb_states.shape[-1])
+        feet_heights = rb_states_3d[
+            :, self.feet_indices, 2
+        ]  # proper way to get feet heights, don't use global feet ind
+        feet_heights = feet_heights.view(-1)
+
+        xy_forces = torch.norm(
+            self.contact_forces[:, self.feet_indices, :2], dim=2
+        ).view(-1)
+        z_forces = self.contact_forces[:, self.feet_indices, 2].view(-1)
+        z_forces = torch.abs(z_forces)
+
+        contact = torch.logical_or(
+            self.contact_forces[:, self.feet_indices, 2] > 1.0,
+            self.contact_forces[:, self.feet_indices, 1] > 1.0,
+        )
+        contact = torch.logical_or(
+            contact, self.contact_forces[:, self.feet_indices, 0] > 1.0
+        )
+
+        contact_filt = torch.logical_or(contact, self.last_contacts).view(-1)
+        self.last_contacts = contact
+        # print("contact filt shape: ", contact_filt.shape)
+
+        xy_forces[feet_heights < 0.05] = 0
+        xy_ans = xy_forces.view(-1, 4).sum(dim=1)
+
+        # print("lowest contacting foot: ", feet_heights[z_forces > 1].min())
+        # print("highest contacting foot: ", feet_heights[z_forces > 50.0].max())
+        z_forces[feet_heights < 0.05] = 0
+        z_ans = z_forces.view(-1, 4).sum(dim=1)
+        z_ans[z_ans > 1] = 1  # (num_robots)
+
+        # ans = torch.ones(1024).cuda()
+        return z_ans
+
+    def _eval_crash_freq(self):
+        reset_buf = torch.any(
+            torch.norm(
+                self.contact_forces[:, self.termination_contact_indices, :], dim=-1
+            )
+            > 1.0,
+            dim=1,
+        )
+
+        # print("reset buff: ", reset_buf)
+
+        return reset_buf
+
+    def _eval_any_contacts(self):
+        stumble = self._eval_feet_stumble()
+        step = self._eval_feet_step()
+
+        return torch.logical_or(stumble, step)

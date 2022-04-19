@@ -171,7 +171,7 @@ class Terrain:
             num_rectangles = int(200 * difficulty)
             # num_rectangles = 0
             rectangle_min_size = 2
-            rectangle_max_size = 4
+            rectangle_max_size = 5
             min_height = 0.14
             max_height = 0.15
             terrain_utils.discrete_obstacles_terrain_cells(

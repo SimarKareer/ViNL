@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -36,6 +36,7 @@ from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
 
 import torch
+
 # from torch.tensor import Tensor
 from typing import Tuple, Dict
 
@@ -43,30 +44,81 @@ from legged_gym.envs import LeggedRobot
 from legged_gym import LEGGED_GYM_ROOT_DIR
 from .mixed_terrains.aliengo_rough_config import AliengoRoughCfg
 
+
 class Aliengo(LeggedRobot):
-    cfg : AliengoRoughCfg
+    cfg: AliengoRoughCfg
+
     def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
+        self.camera_handles = []
+
+        for i in range(self.num_envs):
+            # TODO Add camera sensors here?
+            camera_props = gymapi.CameraProperties()
+            # camera_props.horizontal_fov = 75.0
+            camera_props.width = 128
+            camera_props.height = 128
+            camera_handle = self.gym.create_camera_sensor(self.envs[i], camera_props)
+            self.camera_handles.append(camera_handle)
+
+            local_transform = gymapi.Transform()
+            local_transform.p = gymapi.Vec3(0.0, 0.0, 0.0)
+            local_transform.r = gymapi.Quat.from_axis_angle(
+                gymapi.Vec3(0, 1, 0), np.radians(0.0)
+            )
+            body_handle = self.gym.find_actor_rigid_body_handle(
+                self.envs[i], self.actor_handles[i], "base"
+            )
+
+            self.gym.attach_camera_to_body(
+                camera_handle,
+                self.envs[i],
+                body_handle,
+                local_transform,
+                gymapi.FOLLOW_TRANSFORM,
+            )
 
         # # load actuator network
         # if self.cfg.control.use_actuator_network:
         #     actuator_network_path = self.cfg.control.actuator_net_file.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
         #     self.actuator_network = torch.jit.load(actuator_network_path).to(self.device)
-    
+
     def reset_idx(self, env_ids):
         super().reset_idx(env_ids)
         # Additionaly empty actuator network hidden states
-        self.sea_hidden_state_per_env[:, env_ids] = 0.
-        self.sea_cell_state_per_env[:, env_ids] = 0.
+        self.sea_hidden_state_per_env[:, env_ids] = 0.0
+        self.sea_cell_state_per_env[:, env_ids] = 0.0
 
     def _init_buffers(self):
         super()._init_buffers()
         # Additionally initialize actuator network hidden state tensors
-        self.sea_input = torch.zeros(self.num_envs*self.num_actions, 1, 2, device=self.device, requires_grad=False)
-        self.sea_hidden_state = torch.zeros(2, self.num_envs*self.num_actions, 8, device=self.device, requires_grad=False)
-        self.sea_cell_state = torch.zeros(2, self.num_envs*self.num_actions, 8, device=self.device, requires_grad=False)
-        self.sea_hidden_state_per_env = self.sea_hidden_state.view(2, self.num_envs, self.num_actions, 8)
-        self.sea_cell_state_per_env = self.sea_cell_state.view(2, self.num_envs, self.num_actions, 8)
+        self.sea_input = torch.zeros(
+            self.num_envs * self.num_actions,
+            1,
+            2,
+            device=self.device,
+            requires_grad=False,
+        )
+        self.sea_hidden_state = torch.zeros(
+            2,
+            self.num_envs * self.num_actions,
+            8,
+            device=self.device,
+            requires_grad=False,
+        )
+        self.sea_cell_state = torch.zeros(
+            2,
+            self.num_envs * self.num_actions,
+            8,
+            device=self.device,
+            requires_grad=False,
+        )
+        self.sea_hidden_state_per_env = self.sea_hidden_state.view(
+            2, self.num_envs, self.num_actions, 8
+        )
+        self.sea_cell_state_per_env = self.sea_cell_state.view(
+            2, self.num_envs, self.num_actions, 8
+        )
 
     def _compute_torques(self, actions):
         # Choose between pd controller and actuator network
@@ -78,4 +130,5 @@ class Aliengo(LeggedRobot):
         #     return torques
         # else:
         #     # pd controller
-        return super()._compute_torques(actions)    
+        return super()._compute_torques(actions)
+
