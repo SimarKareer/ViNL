@@ -43,9 +43,8 @@ import pickle
 def play(args):
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing
-    env_cfg.env.num_envs = (
-        1 if train_cfg.runner.eval_baseline else min(env_cfg.env.num_envs, 50)
-    )
+    env_cfg.env.num_envs = min(train_cfg.runner.num_test_envs, 50)
+
     env_cfg.terrain.num_rows = 5
     env_cfg.terrain.num_cols = 5
     env_cfg.terrain.curriculum = False
@@ -89,7 +88,9 @@ def play(args):
 
     # obs_actions_motor = []
     actions_record = np.zeros((1000, 12))
+    torque_record = np.zeros((1000, 12))
     obs_record = np.zeros((1000, 48))
+
 
     for i in range(10 * int(env.max_episode_length)):
         if train_cfg.runner.eval_baseline:
@@ -99,11 +100,13 @@ def play(args):
 
         actions_record[i] = actions.detach().cpu()[0]
         obs_record[i] = obs.detach().cpu()[0]
+        torque_record[i] = env._compute_torques(actions).detach().cpu()[0]
+
         # print(obs.shape)
         if i == 999:
             pickle.dump(actions_record, open("actions.p", "wb"))
             pickle.dump(obs_record, open("obs.p", "wb"))
-
+            pickle.dump(torque_record, open("torque.p", "wb"))
             break
 
         obs, _, rews, dones, infos = env.step(actions.detach())

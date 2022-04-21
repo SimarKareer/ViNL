@@ -33,8 +33,13 @@ import torch
 
 
 class AliengoFlatCfg(AliengoRoughCfg):
+    class viewer:
+        pos = [5, 5, 3]  # [m]
+        lookat = [3.0, 0, 1.0]  # [m]
+    
     class env(AliengoRoughCfg.env):
         num_observations = 48
+
 
     class terrain(AliengoRoughCfg.terrain):
         mesh_type = "plane"
@@ -80,6 +85,7 @@ class AliengoFlatCfgPPO(AliengoRoughCfgPPO):
         entropy_coef = 0.01
 
     class runner(AliengoRoughCfgPPO.runner):
+        num_test_envs = 1
         run_name = ""
         experiment_name = "flat_Aliengo"
         load_run = -1
