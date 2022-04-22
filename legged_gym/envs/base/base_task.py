@@ -33,6 +33,7 @@ from isaacgym import gymapi
 from isaacgym import gymutil
 import numpy as np
 import torch
+from torch import nn
 
 # Base class for RL tasks
 class BaseTask:
@@ -84,10 +85,17 @@ class BaseTask:
                 device=self.device,
                 dtype=torch.float,
             )
-        else:
-            self.privileged_obs_buf = None
-            # self.num_privileged_obs = self.num_obs
 
+        if cfg.env.camera_res is None:
+            self.image_buf = None
+        else:
+            self.image_buf = torch.zeros(
+                self.num_envs,
+                cfg.env.camera_res[1],  # rows = height
+                cfg.env.camera_res[0],  # cols = width
+                device=self.device,
+                dtype=torch.float,
+            )
         self.extras = {}
 
         # create envs, sim and viewer
@@ -133,7 +141,8 @@ class BaseTask:
         raise NotImplementedError
 
     def render(self, sync_frame_time=True):
-        self.gym.render_all_camera_sensors(self.sim)
+        if self.cfg.cameras.render:
+            self.gym.render_all_camera_sensors(self.sim)
 
         if self.viewer:
             # check for window closed
