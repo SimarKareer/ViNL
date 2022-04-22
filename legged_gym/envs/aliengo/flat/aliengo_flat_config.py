@@ -39,6 +39,7 @@ class AliengoFlatCfg(AliengoRoughCfg):
     
     class env(AliengoRoughCfg.env):
         num_observations = 48
+        num_envs=1024
 
 
     class terrain(AliengoRoughCfg.terrain):
@@ -57,7 +58,6 @@ class AliengoFlatCfg(AliengoRoughCfg):
             feet_air_time = 2.0
             base_height = -1.0  # I added this reward to get the robot a high higher up
             # feet_contact_forces = -0.01
-
     class commands(AliengoRoughCfg.commands):
         heading_command = False
         resampling_time = 4.0
@@ -73,7 +73,9 @@ class AliengoFlatCfg(AliengoRoughCfg):
             0.0,
             1.5,
         ]  # on ground planes the friction combination mode is averaging, i.e total friction = (foot_friction + 1.)/2.
-
+    
+    class control(AliengoRoughCfg.control):
+        action_scale = 0.25
 
 class AliengoFlatCfgPPO(AliengoRoughCfgPPO):
     class policy(AliengoRoughCfgPPO.policy):

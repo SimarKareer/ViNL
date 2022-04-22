@@ -100,7 +100,7 @@ class LeggedRobotCfg(BaseConfig):
             heading = [-3.14, 3.14]
 
     class init_state:
-        pos = [0.0, 0.0, 1.0]  # x,y,z [m]
+        pos = [0.0, 0.0, 0.2]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
@@ -112,10 +112,13 @@ class LeggedRobotCfg(BaseConfig):
     class control:
         control_type = "P"  # P: position, V: velocity, T: torques
         # PD Drive parameters:
-        stiffness = {"joint_a": 10.0, "joint_b": 15.0}  # [N*m/rad]
-        damping = {"joint_a": 1.0, "joint_b": 1.5}  # [N*m*s/rad]
+        # stiffness = {"joint": 250.0}  # [N*m/rad]
+        # damping = {"joint": 4.0}  # [N*m*s/rad]
+        stiffness = {"joint": 40.0}  # [N*m/rad]
+        damping = {"joint": 2.0}  # [N*m*s/rad]
+
         # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = 0.5
+        action_scale = 0.25
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 4
 
@@ -216,6 +219,9 @@ class LeggedRobotCfg(BaseConfig):
         ref_env = 0
         pos = [75, 75, 6]  # [m]
         lookat = [11.0, 5, 3.0]  # [m]
+    
+    class cameras:
+        render = False
 
     class sim:
         dt = 0.005
@@ -284,5 +290,4 @@ class LeggedRobotCfgPPO(BaseConfig):
         checkpoint = -1  # -1 = last saved model
         resume_path = None  # updated from load_run and chkpt
         eval_baseline = False
-        num_test_envs = 50
 
