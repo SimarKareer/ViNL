@@ -43,7 +43,14 @@ class AliengoRoughCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         # num_envs = 4096
         num_envs = 1024  # was getting a seg fault
+        # num_envs = 100  # was getting a seg fault
         num_actions = 12
+        num_observations = 235
+        num_proprio_obs = 48
+        camera_res = [1280, 720]
+        camera_type = "d"  # rgb
+        num_privileged_obs = None  # 187
+        train_type = "priv"  # standard, priv, lbc
 
     class terrain(LeggedRobotCfg.terrain):
         mesh_type = "trimesh"
@@ -97,10 +104,23 @@ class AliengoRoughCfg(LeggedRobotCfg):
         class scales(LeggedRobotCfg.rewards.scales):
             pass
 
+    class evals(LeggedRobotCfg.evals):
+        feet_stumble = True
+        feet_step = True
+        crash_freq = True
+        any_contacts = True
+
 
 class AliengoRoughCfgPPO(LeggedRobotCfgPPO):
+    class obsSize(LeggedRobotCfgPPO.obsSize):
+        encoder_hidden_dims = [128, 64, 32]
+        # encoder_input_size=[17, 11, 1] #x samples (forward facing / rows), y samples(sideways / cols)
+        # encoder_output_size=32
+        # encoder_hidden_dims = None
+
     class runner(LeggedRobotCfgPPO.runner):
-        run_name = ""
+        run_name = "RoughTerrainDMEnc"
         experiment_name = "rough_aliengo"
         load_run = -1
         resume_path = None
+        max_iterations = 1500

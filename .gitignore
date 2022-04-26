@@ -48,6 +48,10 @@ Thumbs.db
 *.mov
 *.wmv
 
+#
+images/
+pickles/
+
 # VS Code
 .vscode
 # logs

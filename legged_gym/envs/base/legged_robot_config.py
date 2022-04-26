@@ -35,11 +35,14 @@ class LeggedRobotCfg(BaseConfig):
     class env:
         num_envs = 4096
         num_observations = 235
+        num_proprio_obs = 48
         num_privileged_obs = None  # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
         num_actions = 12
         env_spacing = 3.0  # not used with heightfields/trimeshes
         send_timeouts = True  # send time out information to the algorithm
         episode_length_s = 20  # episode length in seconds
+        save_im = False
+        train_type = "standard"
 
     class terrain:
         mesh_type = "trimesh"  # "heightfield" # none, plane, heightfield or trimesh
@@ -104,10 +107,6 @@ class LeggedRobotCfg(BaseConfig):
         rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
-        default_joint_angles = {  # target angles when action = 0.0
-            "joint_a": 0.0,
-            "joint_b": 0.0,
-        }
 
     class control:
         control_type = "P"  # P: position, V: velocity, T: torques
@@ -242,6 +241,9 @@ class LeggedRobotCfg(BaseConfig):
 class LeggedRobotCfgPPO(BaseConfig):
     seed = 1
     runner_class_name = "OnPolicyRunner"
+
+    class obsSize:
+        encoder_hidden_dims = None
 
     class policy:
         init_noise_std = 1.0

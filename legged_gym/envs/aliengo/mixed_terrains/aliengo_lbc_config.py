@@ -28,6 +28,7 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
+from base64 import encode
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
 """
@@ -41,10 +42,17 @@ changes from a1 to aliengo
 
 class AliengoLbcCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 1
+        num_envs = 100
         # num_envs = 4096 # was getting a seg fault
         # num_envs = 2
         num_actions = 12
+        num_observations = 235
+        num_proprio_obs = 48
+        save_im = False
+        camera_res = [1280, 720]
+        camera_type = "d"  # rgb
+        num_privileged_obs = None  # 187
+        train_type = "priv"  # standard, priv, lbc
 
     class terrain(LeggedRobotCfg.terrain):
         # terrain_proportions = [0.1, 0.1, 0.2, 0.2, 0.2, 0.2]
@@ -121,6 +129,9 @@ class AliengoLbcCfg(LeggedRobotCfg):
 
 
 class AliengoLbcCfgPPO(LeggedRobotCfgPPO):
+    class obsSize(LeggedRobotCfgPPO.obsSize):
+        encoder_hidden_dims = [128, 64, 32]
+
     class runner(LeggedRobotCfgPPO.runner):
         run_name = "CameraSetup"
         # run_name = ""
@@ -128,8 +139,8 @@ class AliengoLbcCfgPPO(LeggedRobotCfgPPO):
         load_run = -1
         max_iterations = 10000  # number of policy updates
 
-        resume = True
-        resume_path = (
-            "./logs/obs_aliengo/Apr07_16-30-27_BaselineStepStumble/model_3000.pt"
-        )
+        # resume = True
+        # resume_path = (
+        #     "./logs/obs_aliengo/Apr07_16-30-27_BaselineStepStumble/model_3000.pt"
+        # )
         # resume_path = "./logs/obs_aliengo/Apr07_12-17-33_NoObsRewards/model_3000.pt"

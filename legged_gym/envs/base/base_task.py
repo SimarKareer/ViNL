@@ -85,10 +85,10 @@ class BaseTask:
                 device=self.device,
                 dtype=torch.float,
             )
-
-        if cfg.env.camera_res is None:
-            self.image_buf = None
         else:
+            self.privileged_obs_buf = None
+
+        if cfg.env.train_type == "lbc":
             self.image_buf = torch.zeros(
                 self.num_envs,
                 cfg.env.camera_res[1],  # rows = height
@@ -96,6 +96,8 @@ class BaseTask:
                 device=self.device,
                 dtype=torch.float,
             )
+        else:
+            self.image_buf = None
         self.extras = {}
 
         # create envs, sim and viewer
@@ -141,7 +143,7 @@ class BaseTask:
         raise NotImplementedError
 
     def render(self, sync_frame_time=True):
-        if self.cfg.cameras.render:
+        if self.cfg.env.train_type == "lbc":
             self.gym.render_all_camera_sensors(self.sim)
 
         if self.viewer:

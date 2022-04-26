@@ -47,6 +47,7 @@ from legged_gym.utils.terrain import Terrain
 from legged_gym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
 from legged_gym.utils.helpers import class_to_dict
 from .legged_robot_config import LeggedRobotCfg
+from torchvision.utils import save_image
 
 
 class LeggedRobot(BaseTask):
@@ -65,6 +66,7 @@ class LeggedRobot(BaseTask):
             device_id (int): 0, 1, ...
             headless (bool): Run without rendering if True
         """
+        self.count = 0
         self.num_calls = 0
         self.cfg = cfg
         self.sim_params = sim_params
@@ -300,6 +302,8 @@ class LeggedRobot(BaseTask):
             dim=-1,
         )
         # add perceptive inputs if not blind
+        heights = None
+        # print(self.measured_heights.shape)
         if self.cfg.terrain.measure_heights:
             heights = (
                 torch.clip(
@@ -309,7 +313,70 @@ class LeggedRobot(BaseTask):
                 )
                 * self.obs_scales.height_measurements
             )
+
+        if heights is not None:
             self.obs_buf = torch.cat((self.obs_buf, heights), dim=-1)
+        # if self.cfg.env.train_type == "standard":
+        #     if heights is not None:
+        #         self.obs_buf = torch.cat((self.obs_buf, heights), dim=-1)
+        # elif self.cfg.env.train_type == "priv" or self.cfg.env.train_type == "lbc":
+        #     self.obs_buf = torch.cat((self.obs_buf, heights), dim=-1)
+        #     self.depth_buf = heights
+
+        self.count += 1
+        # if self.count == 10:
+        #     exit()
+        if self.cfg.env.train_type == "lbc":
+            width, height = self.cfg.env.camera_res
+
+            for i in range(self.num_envs):
+                # print("iamge buf: ", self.image_buf.shape)
+
+                self.gym.start_access_image_tensors(self.sim)
+                if self.cfg.env.camera_type == "rgb":
+                    im = self.gym.get_camera_image_gpu_tensor(
+                        self.sim,  # self.depth_buf,
+                        # self.image_buf,
+                        self.camera_handles[i],
+                        gymapi.IMAGE_COLOR,
+                    )
+                    im = gymtorch.wrap_tensor(im)
+                    self.image_buf[i] = im
+
+                    if self.cfg.env.save_im:
+                        trans_im = im.detach().clone()
+                        # print("image size: ", trans_im.shape)
+                        trans_im = (trans_im[..., :3]).float() / 255
+                        save_image(
+                            trans_im.view((height, width, 3)).permute(2, 0, 1).float(),
+                            "images/im" + str(self.count) + ".png",
+                        )
+                elif self.cfg.env.camera_type == "d":
+                    im = self.gym.get_camera_image_gpu_tensor(
+                        self.sim,
+                        self.envs[i],
+                        self.camera_handles[i],
+                        gymapi.IMAGE_DEPTH,
+                    )
+                    im = gymtorch.wrap_tensor(im)
+                    self.image_buf[i] = im
+
+                    if self.cfg.env.save_im:
+                        trans_im = im.detach().clone()
+                        # print(trans_im)
+                        trans_im = -1 / trans_im
+                        trans_im = trans_im / torch.max(trans_im)
+                        # print("transformed im", trans_im)
+                        # print("image size: ", trans_im.shape)
+                        save_image(
+                            trans_im.view((height, width, 1)).permute(2, 0, 1).float(),
+                            "images/dim" + str(self.count) + ".png",
+                        )
+                self.gym.end_access_image_tensors(self.sim)
+
+                # TODO will need to add image to obs_buf, not image_buf (flattened then unflat later)
+                # self.image_buf[i] = im
+
         # add noise if needed
         if self.add_noise:
             self.obs_buf += (
