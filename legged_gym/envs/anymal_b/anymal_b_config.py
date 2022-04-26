@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -30,16 +30,19 @@
 
 from legged_gym.envs import AnymalCRoughCfg, AnymalCRoughCfgPPO
 
-class AnymalBRoughCfg( AnymalCRoughCfg ):
-    class asset( AnymalCRoughCfg.asset ):
-        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/anymal_b/urdf/anymal_b.urdf'
-        foot_name = 'FOOT'
-    class rewards( AnymalCRoughCfg.rewards ):
-        class scales ( AnymalCRoughCfg.rewards.scales ):
+
+class AnymalBRoughCfg(AnymalCRoughCfg):
+    class asset(AnymalCRoughCfg.asset):
+        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/anymal_b/urdf/anymal_b.urdf"
+        foot_name = "FOOT"
+
+    class rewards(AnymalCRoughCfg.rewards):
+        class scales(AnymalCRoughCfg.rewards.scales):
             pass
 
-class AnymalBRoughCfgPPO( AnymalCRoughCfgPPO ):
-    class runner ( AnymalCRoughCfgPPO.runner):
-        run_name = ''
-        experiment_name = 'rough_anymal_b'
+
+class AnymalBRoughCfgPPO(AnymalCRoughCfgPPO):
+    class runner(AnymalCRoughCfgPPO.runner):
+        run_name = ""
+        experiment_name = "rough_anymal_b"
         load_run = -1

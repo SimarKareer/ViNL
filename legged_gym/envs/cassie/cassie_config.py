@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -30,83 +30,101 @@
 
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
-class CassieRoughCfg( LeggedRobotCfg ):
-    class env( LeggedRobotCfg.env):
+
+class CassieRoughCfg(LeggedRobotCfg):
+    class env(LeggedRobotCfg.env):
         num_envs = 4096
         num_observations = 169
         num_actions = 12
 
-    
-    class terrain( LeggedRobotCfg.terrain):
-        measured_points_x = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5] # 1mx1m rectangle (without center line)
-        measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
+    class terrain(LeggedRobotCfg.terrain):
+        measured_points_x = [
+            -0.5,
+            -0.4,
+            -0.3,
+            -0.2,
+            -0.1,
+            0.0,
+            0.1,
+            0.2,
+            0.3,
+            0.4,
+            0.5,
+        ]  # 1mx1m rectangle (without center line)
+        measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
 
-    class init_state( LeggedRobotCfg.init_state ):
-        pos = [0.0, 0.0, 1.] # x,y,z [m]
-        default_joint_angles = { # = target angles [rad] when action = 0.0
-            'hip_abduction_left': 0.1,
-            'hip_rotation_left': 0.,
-            'hip_flexion_left': 1.,
-            'thigh_joint_left': -1.8,
-            'ankle_joint_left': 1.57,
-            'toe_joint_left': -1.57,
-
-            'hip_abduction_right': -0.1,
-            'hip_rotation_right': 0.,
-            'hip_flexion_right': 1.,
-            'thigh_joint_right': -1.8,
-            'ankle_joint_right': 1.57,
-            'toe_joint_right': -1.57
+    class init_state(LeggedRobotCfg.init_state):
+        pos = [0.0, 0.0, 1.0]  # x,y,z [m]
+        default_joint_angles = {  # = target angles [rad] when action = 0.0
+            "hip_abduction_left": 0.1,
+            "hip_rotation_left": 0.0,
+            "hip_flexion_left": 1.0,
+            "thigh_joint_left": -1.8,
+            "ankle_joint_left": 1.57,
+            "toe_joint_left": -1.57,
+            "hip_abduction_right": -0.1,
+            "hip_rotation_right": 0.0,
+            "hip_flexion_right": 1.0,
+            "thigh_joint_right": -1.8,
+            "ankle_joint_right": 1.57,
+            "toe_joint_right": -1.57,
         }
 
-    class control( LeggedRobotCfg.control ):
+    class control(LeggedRobotCfg.control):
         # PD Drive parameters:
-        stiffness = {   'hip_abduction': 100.0, 'hip_rotation': 100.0,
-                        'hip_flexion': 200., 'thigh_joint': 200., 'ankle_joint': 200.,
-                        'toe_joint': 40.}  # [N*m/rad]
-        damping = { 'hip_abduction': 3.0, 'hip_rotation': 3.0,
-                    'hip_flexion': 6., 'thigh_joint': 6., 'ankle_joint': 6.,
-                    'toe_joint': 1.}  # [N*m*s/rad]     # [N*m*s/rad]
+        stiffness = {
+            "hip_abduction": 100.0,
+            "hip_rotation": 100.0,
+            "hip_flexion": 200.0,
+            "thigh_joint": 200.0,
+            "ankle_joint": 200.0,
+            "toe_joint": 40.0,
+        }  # [N*m/rad]
+        damping = {
+            "hip_abduction": 3.0,
+            "hip_rotation": 3.0,
+            "hip_flexion": 6.0,
+            "thigh_joint": 6.0,
+            "ankle_joint": 6.0,
+            "toe_joint": 1.0,
+        }  # [N*m*s/rad]     # [N*m*s/rad]
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.5
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 4
-        
-    class asset( LeggedRobotCfg.asset ):
-        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/cassie/urdf/cassie.urdf'
-        foot_name = 'toe'
-        terminate_after_contacts_on = ['pelvis']
+
+    class asset(LeggedRobotCfg.asset):
+        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/cassie/urdf/cassie.urdf"
+        foot_name = "toe"
+        terminate_after_contacts_on = ["pelvis"]
         flip_visual_attachments = False
-        self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
-  
-    class rewards( LeggedRobotCfg.rewards ):
+        self_collisions = 1  # 1 to disable, 0 to enable...bitwise filter
+
+    class rewards(LeggedRobotCfg.rewards):
         soft_dof_pos_limit = 0.95
         soft_dof_vel_limit = 0.9
         soft_torque_limit = 0.9
-        max_contact_force = 300.
+        max_contact_force = 300.0
         only_positive_rewards = False
-        class scales( LeggedRobotCfg.rewards.scales ):
-            termination = -200.
+
+        class scales(LeggedRobotCfg.rewards.scales):
+            termination = -200.0
             tracking_ang_vel = 1.0
-            torques = -5.e-6
-            dof_acc = -2.e-7
+            torques = -5.0e-6
+            dof_acc = -2.0e-7
             lin_vel_z = -0.5
-            feet_air_time = 5.
-            dof_pos_limits = -1.
+            feet_air_time = 5.0
+            dof_pos_limits = -1.0
             no_fly = 0.25
             dof_vel = -0.0
             ang_vel_xy = -0.0
-            feet_contact_forces = -0.
+            feet_contact_forces = -0.0
 
-class CassieRoughCfgPPO( LeggedRobotCfgPPO ):
-    
-    class runner( LeggedRobotCfgPPO.runner ):
-        run_name = ''
-        experiment_name = 'rough_cassie'
 
-    class algorithm( LeggedRobotCfgPPO.algorithm):
+class CassieRoughCfgPPO(LeggedRobotCfgPPO):
+    class runner(LeggedRobotCfgPPO.runner):
+        run_name = ""
+        experiment_name = "rough_cassie"
+
+    class algorithm(LeggedRobotCfgPPO.algorithm):
         entropy_coef = 0.01
-
-
-
-  

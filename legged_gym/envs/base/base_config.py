@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -30,21 +30,22 @@
 
 import inspect
 
+
 class BaseConfig:
     def __init__(self) -> None:
         """ Initializes all member classes recursively. Ignores all namse starting with '__' (buit-in methods)."""
         self.init_member_classes(self)
-    
+
     @staticmethod
     def init_member_classes(obj):
         # iterate over all attributes names
         for key in dir(obj):
             # disregard builtin attributes
             # if key.startswith("__"):
-            if key=="__class__":
+            if key == "__class__":
                 continue
             # get the corresponding attribute object
-            var =  getattr(obj, key)
+            var = getattr(obj, key)
             # check if it the attribute is a class
             if inspect.isclass(var):
                 # instantate the class

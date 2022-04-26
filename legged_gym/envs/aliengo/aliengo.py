@@ -131,4 +131,3 @@ class Aliengo(LeggedRobot):
         # else:
         #     # pd controller
         return super()._compute_torques(actions)
-

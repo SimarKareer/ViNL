@@ -36,10 +36,9 @@ class AliengoFlatCfg(AliengoRoughCfg):
     class viewer:
         pos = [5, 5, 3]  # [m]
         lookat = [3.0, 0, 1.0]  # [m]
-    
+
     class env(AliengoRoughCfg.env):
         num_observations = 48
-
 
     class terrain(AliengoRoughCfg.terrain):
         mesh_type = "plane"

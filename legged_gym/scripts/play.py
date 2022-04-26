@@ -91,7 +91,6 @@ def play(args):
     torque_record = np.zeros((1000, 12))
     obs_record = np.zeros((1000, 48))
 
-
     for i in range(10 * int(env.max_episode_length)):
         if train_cfg.runner.eval_baseline:
             actions = train_cfg.runner.baseline_policy(obs)

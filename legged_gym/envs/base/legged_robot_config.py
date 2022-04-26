@@ -285,4 +285,3 @@ class LeggedRobotCfgPPO(BaseConfig):
         resume_path = None  # updated from load_run and chkpt
         eval_baseline = False
         num_test_envs = 50
-
