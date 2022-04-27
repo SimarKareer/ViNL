@@ -41,10 +41,16 @@ changes from a1 to aliengo
 
 class AliengoObsCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 1024
-        # num_envs = 4096 # was getting a seg fault
-        # num_envs = 2
+        # num_envs = 4096
+        num_envs = 1024  # was getting a seg fault
+        # num_envs = 100  # was getting a seg fault
         num_actions = 12
+        num_observations = 235
+        num_proprio_obs = 48
+        camera_res = [1280, 720]
+        camera_type = "d"  # rgb
+        num_privileged_obs = None  # 187
+        train_type = "priv"  # standard, priv, lbc
 
     class terrain(LeggedRobotCfg.terrain):
         # terrain_proportions = [0.1, 0.1, 0.2, 0.2, 0.2, 0.2]
@@ -121,13 +127,17 @@ class AliengoObsCfg(LeggedRobotCfg):
 
 
 class AliengoObsCfgPPO(LeggedRobotCfgPPO):
+    class obsSize(LeggedRobotCfgPPO.obsSize):
+        encoder_hidden_dims = [128, 64, 32]
+    
     class runner(LeggedRobotCfgPPO.runner):
-        run_name = "StepStumbleLongRun"
+        run_name = "ObsEncDM"
         # run_name = ""
         experiment_name = "obs_aliengo"
         load_run = -1
-        max_iterations = 10000  # number of policy updates
+        max_iterations = 3000  # number of policy updates
 
         resume = True
-        resume_path = "./logs/rough_aliengo/Mar17_14-15-38_/model_1500.pt"
-        # resume_path = "./logs/obs_aliengo/Apr07_12-17-33_NoObsRewards/model_3000.pt"
+        resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/rough_aliengo/Apr26_17-34-03_RoughTerrainDMEnc/model_1500.pt" # latest DMENC run
+        # resume_path = "./logs/rough_aliengo/Mar17_14-15-38_/model_1500.pt" standard run rough terrain
+        # resume_path = "./logs/obs_aliengo/Apr07_12-17-33_NoObsRewards/model_3000.pt" eval path
