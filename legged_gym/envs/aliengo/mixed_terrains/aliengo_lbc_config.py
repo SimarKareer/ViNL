@@ -42,17 +42,19 @@ changes from a1 to aliengo
 
 class AliengoLbcCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 100
+        num_envs = 10
         # num_envs = 4096 # was getting a seg fault
         # num_envs = 2
         num_actions = 12
         num_observations = 235
         num_proprio_obs = 48
         save_im = False
-        camera_res = [1280, 720]
+        # camera_res = [1280, 720]
+        # camera_res = [640, 360]
+        camera_res = [320, 180]
         camera_type = "d"  # rgb
         num_privileged_obs = None  # 187
-        train_type = "priv"  # standard, priv, lbc
+        train_type = "lbc"  # standard, priv, lbc
 
     class terrain(LeggedRobotCfg.terrain):
         # terrain_proportions = [0.1, 0.1, 0.2, 0.2, 0.2, 0.2]
@@ -131,6 +133,7 @@ class AliengoLbcCfg(LeggedRobotCfg):
 class AliengoLbcCfgPPO(LeggedRobotCfgPPO):
     class obsSize(LeggedRobotCfgPPO.obsSize):
         encoder_hidden_dims = [128, 64, 32]
+        cnn_out_size = 32
 
     class runner(LeggedRobotCfgPPO.runner):
         run_name = "CameraSetup"
@@ -144,3 +147,6 @@ class AliengoLbcCfgPPO(LeggedRobotCfgPPO):
         #     "./logs/obs_aliengo/Apr07_16-30-27_BaselineStepStumble/model_3000.pt"
         # )
         # resume_path = "./logs/obs_aliengo/Apr07_12-17-33_NoObsRewards/model_3000.pt"
+
+    class lbc(LeggedRobotCfgPPO.lbc):
+        num_steps_per_sl = 5

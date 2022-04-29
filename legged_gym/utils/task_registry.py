@@ -31,6 +31,7 @@
 import os
 from datetime import datetime
 from typing import Tuple
+from legged_gym.lbc.lbc_runner import LbcRunner
 import torch
 import numpy as np
 
@@ -118,7 +119,7 @@ class TaskRegistry:
         return env, env_cfg
 
     def make_alg_runner(
-        self, env, name=None, args=None, train_cfg=None, log_root="default"
+        self, env, name=None, args=None, train_cfg=None, log_root="default", alg_name="PPO"
     ) -> Tuple[OnPolicyRunner, LeggedRobotCfgPPO]:
         """ Creates the training algorithm  either from a registered namme or from the provided config file.
 
@@ -174,7 +175,10 @@ class TaskRegistry:
             )
 
         train_cfg_dict = class_to_dict(train_cfg)
-        runner = OnPolicyRunner(env, train_cfg_dict, log_dir, device=args.rl_device)
+        if alg_name == "PPO":
+            runner = OnPolicyRunner(env, train_cfg_dict, log_dir, device=args.rl_device)
+        elif alg_name == "LBC":
+            runner = LbcRunner(env, train_cfg_dict, log_dir, device=args.rl_device)
         # save resume path before creating a new log_dir
         resume = train_cfg.runner.resume
         if resume:

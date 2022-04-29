@@ -327,12 +327,12 @@ class LeggedRobot(BaseTask):
         # if self.count == 10:
         #     exit()
         if self.cfg.env.train_type == "lbc":
+
             width, height = self.cfg.env.camera_res
+            image_buf = torch.zeros(self.cfg.env.num_envs, height, width).to(self.device)
 
+            self.gym.start_access_image_tensors(self.sim)
             for i in range(self.num_envs):
-                # print("iamge buf: ", self.image_buf.shape)
-
-                self.gym.start_access_image_tensors(self.sim)
                 if self.cfg.env.camera_type == "rgb":
                     im = self.gym.get_camera_image_gpu_tensor(
                         self.sim,  # self.depth_buf,
@@ -341,7 +341,7 @@ class LeggedRobot(BaseTask):
                         gymapi.IMAGE_COLOR,
                     )
                     im = gymtorch.wrap_tensor(im)
-                    self.image_buf[i] = im
+                    # image_buf[i] = im
 
                     if self.cfg.env.save_im:
                         trans_im = im.detach().clone()
@@ -359,7 +359,8 @@ class LeggedRobot(BaseTask):
                         gymapi.IMAGE_DEPTH,
                     )
                     im = gymtorch.wrap_tensor(im)
-                    self.image_buf[i] = im
+                    image_buf[i] = im
+                    print("im shape: ", im.shape)
 
                     if self.cfg.env.save_im:
                         trans_im = im.detach().clone()
@@ -372,10 +373,9 @@ class LeggedRobot(BaseTask):
                             trans_im.view((height, width, 1)).permute(2, 0, 1).float(),
                             "images/dim" + str(self.count) + ".png",
                         )
-                self.gym.end_access_image_tensors(self.sim)
 
-                # TODO will need to add image to obs_buf, not image_buf (flattened then unflat later)
-                # self.image_buf[i] = im
+            self.gym.end_access_image_tensors(self.sim)
+            self.obs_buf = torch.cat((self.obs_buf, image_buf.view(self.cfg.env.num_envs, -1)), dim=-1)
 
         # add noise if needed
         if self.add_noise:

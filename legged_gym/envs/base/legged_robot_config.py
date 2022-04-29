@@ -75,6 +75,7 @@ class LeggedRobotCfg(BaseConfig):
             0.8,
         ]  # 1mx1.6m rectangle (without center line)
         measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
+        num_points = len(measured_points_x) * len(measured_points_y)
         selected = False  # select a unique terrain type and pass all arguments
         terrain_kwargs = None  # Dict of arguments for selected terrain
         max_init_terrain_level = 5  # starting curriculum state
@@ -244,6 +245,9 @@ class LeggedRobotCfgPPO(BaseConfig):
 
     class obsSize:
         encoder_hidden_dims = None
+    
+    class lbc:
+        pass
 
     class policy:
         init_noise_std = 1.0

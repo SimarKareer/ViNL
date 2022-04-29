@@ -1,3 +1,5 @@
+from legged_gym.lbc.algorithms.lbc import LBC
+from legged_gym.lbc.models.actor_encoder_lbc import ActorEncoder
 from torch.utils.tensorboard import SummaryWriter
 import torch
 
@@ -5,15 +7,17 @@ from rsl_rl.algorithms import PPO
 from rsl_rl.modules import ActorCritic, ActorCriticRecurrent
 from rsl_rl.env import VecEnv
 from pytorch_memlab import MemReporter
+import time
 
 
 
-class OnPolicyRunner:
+class LbcRunner:
     def __init__(self, env: VecEnv, train_cfg, log_dir=None, device="cpu"):
 
         self.cfg = train_cfg["runner"]
         self.alg_cfg = train_cfg["algorithm"]
         self.policy_cfg = train_cfg["policy"]
+        self.lbc_cfg = train_cfg["lbc"]
         self.device = device
         self.env = env
         envcfg = self.env.cfg
@@ -31,33 +35,29 @@ class OnPolicyRunner:
         enc_hidden_dims = train_cfg["obsSize"]["encoder_hidden_dims"]
 
 
-        # if enc_inp_size is not None:
-        if enc_hidden_dims is not None:
-            num_encoder_obs = self.env.num_obs - envcfg.env.num_proprio_obs
-            # num_actor_obs = envcfg.env.num_proprio_obs + enc_out_size
-            num_actor_obs = envcfg.env.num_proprio_obs + enc_hidden_dims[-1]
-        else:
-            num_actor_obs = self.env.num_obs
-            num_encoder_obs = -1
+        # num_encoder_obs = self.env.num_obs - envcfg.env.num_proprio_obs
+        num_actor_obs = envcfg.env.num_proprio_obs + train_cfg["obsSize"]["cnn_out_size"]
 
         
-        actor_critic_class = eval(self.cfg["policy_class_name"])  # ActorCritic
-        actor_critic: ActorCritic = actor_critic_class(
-            num_actor_obs, num_critic_obs, num_encoder_obs, self.env.num_actions, encoder_hidden_dims=enc_hidden_dims, **self.policy_cfg
+        # actor_critic_class = eval(self.cfg["policy_class_name"])  # ActorCritic
+        actor_encoder = ActorEncoder(
+            num_actor_obs, self.env.num_actions
         ).to(self.device)
-        alg_class = eval(self.cfg["algorithm_class_name"])  # PPO
-        self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
-        self.num_steps_per_env = self.cfg["num_steps_per_env"]
+        
+        # alg_class = eval(self.cfg["algorithm_class_name"])  # PPO
+        self.alg = LBC(actor_encoder, device="cuda")
+        # self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
+        # self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
 
         # init storage and model
-        self.alg.init_storage(
-            self.env.num_envs,
-            self.num_steps_per_env,
-            [self.env.num_obs],
-            [self.env.num_privileged_obs],
-            [self.env.num_actions],
-        )
+        # self.alg.init_storage(
+        #     self.env.num_envs,
+        #     self.num_steps_per_env,
+        #     [self.env.num_obs],
+        #     [self.env.num_privileged_obs],
+        #     [self.env.num_actions],
+        # )
 
         # Log
         self.log_dir = log_dir
@@ -82,17 +82,17 @@ class OnPolicyRunner:
         privileged_obs = self.env.get_privileged_observations()
         critic_obs = privileged_obs if privileged_obs is not None else obs
         obs, critic_obs = obs.to(self.device), critic_obs.to(self.device)
-        self.alg.actor_critic.train()  # switch to train mode (for dropout for example)
+        self.alg.actor_enc.eval()  # switch to train mode (for dropout for example)
 
-        ep_infos = []
-        rewbuffer = deque(maxlen=100)
-        lenbuffer = deque(maxlen=100)
-        cur_reward_sum = torch.zeros(
-            self.env.num_envs, dtype=torch.float, device=self.device
-        )
-        cur_episode_length = torch.zeros(
-            self.env.num_envs, dtype=torch.float, device=self.device
-        )
+        # ep_infos = []
+        # rewbuffer = deque(maxlen=100)
+        # lenbuffer = deque(maxlen=100)
+        # cur_reward_sum = torch.zeros(
+        #     self.env.num_envs, dtype=torch.float, device=self.device
+        # )
+        # cur_episode_length = torch.zeros(
+        #     self.env.num_envs, dtype=torch.float, device=self.device
+        # )
 
         reporter = MemReporter()
 
@@ -102,8 +102,8 @@ class OnPolicyRunner:
             # reporter.report()
             # Rollout
             with torch.inference_mode():
-                for i in range(self.num_steps_per_env):
-                    actions = self.alg.act(obs, critic_obs)
+                for i in range(1): #self.lbc_cfg.num_steps_per_sl):
+                    actions = self.alg.act(obs)
                     
                     (
                         obs,
@@ -121,46 +121,47 @@ class OnPolicyRunner:
                         rewards.to(self.device),
                         dones.to(self.device),
                     )
-                    self.alg.process_env_step(rewards, dones, infos)
+                    self.alg.process_env_step(rewards, dones, infos) # might be unnecessary
 
-                    if self.log_dir is not None:
-                        # Book keeping
-                        if "episode" in infos:
-                            ep_infos.append(infos["episode"])
-                        cur_reward_sum += rewards
-                        cur_episode_length += 1
-                        new_ids = (dones > 0).nonzero(as_tuple=False)
-                        rewbuffer.extend(
-                            cur_reward_sum[new_ids][:, 0].cpu().numpy().tolist()
-                        )
-                        lenbuffer.extend(
-                            cur_episode_length[new_ids][:, 0].cpu().numpy().tolist()
-                        )
-                        cur_reward_sum[new_ids] = 0
-                        cur_episode_length[new_ids] = 0
+                    # if self.log_dir is not None:
+                    #     # Book keeping
+                    #     if "episode" in infos:
+                    #         ep_infos.append(infos["episode"])
+                    #     cur_reward_sum += rewards
+                    #     cur_episode_length += 1
+                    #     new_ids = (dones > 0).nonzero(as_tuple=False)
+                    #     rewbuffer.extend(
+                    #         cur_reward_sum[new_ids][:, 0].cpu().numpy().tolist()
+                    #     )
+                    #     lenbuffer.extend(
+                    #         cur_episode_length[new_ids][:, 0].cpu().numpy().tolist()
+                    #     )
+                    #     cur_reward_sum[new_ids] = 0
+                    #     cur_episode_length[new_ids] = 0
 
                 stop = time.time()
                 collection_time = stop - start
 
                 # Learning step
                 start = stop
-                self.alg.compute_returns(critic_obs)
+                # self.alg.compute_returns(critic_obs)
 
-            mean_value_loss, mean_surrogate_loss = self.alg.update()
-            stop = time.time()
-            learn_time = stop - start
-            if self.log_dir is not None:
-                self.log(locals())
-            if it % self.save_interval == 0:
-                self.save(os.path.join(self.log_dir, "model_{}.pt".format(it)))
-            ep_infos.clear()
+            self.alg.update()
+            # mean_value_loss, mean_surrogate_loss = self.alg.update()
+            # stop = time.time()
+            # learn_time = stop - start
+            # if self.log_dir is not None:
+            #     self.log(locals())
+            # if it % self.save_interval == 0:
+            #     self.save(os.path.join(self.log_dir, "model_{}.pt".format(it)))
+            # ep_infos.clear()
 
         self.current_learning_iteration += num_learning_iterations
-        self.save(
-            os.path.join(
-                self.log_dir, "model_{}.pt".format(self.current_learning_iteration)
-            )
-        )
+        # self.save(
+        #     os.path.join(
+        #         self.log_dir, "model_{}.pt".format(self.current_learning_iteration)
+        #     )
+        # )
 
     def log(self, locs, width=80, pad=35):
         self.tot_timesteps += self.num_steps_per_env * self.env.num_envs

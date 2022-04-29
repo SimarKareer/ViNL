@@ -65,12 +65,12 @@ class Aliengo(LeggedRobot):
                 camera_props.width = width
                 camera_props.height = height
                 camera_props.enable_tensors = True
-                print("envs[i]", self.envs[i])
-                print("len envs: ", len(self.envs))
+                # print("envs[i]", self.envs[i])
+                # print("len envs: ", len(self.envs))
                 camera_handle = self.gym.create_camera_sensor(
                     self.envs[i], camera_props
                 )
-                print("cam handle: ", camera_handle)
+                # print("cam handle: ", camera_handle)
                 self.camera_handles.append(camera_handle)
 
                 local_transform = gymapi.Transform()
