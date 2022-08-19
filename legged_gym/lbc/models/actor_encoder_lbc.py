@@ -38,22 +38,47 @@ class CNNRNN(nn.Module):
 
         rnn_input = torch.cat([image_enc, propprio], dim=-1)
 
-        if self.hidden_state is None:
-            self.hidden_state = torch.zeros(rnn_input.shape[0], self.rnn_layers, self.rnn_hidden_size)
+        # if self.hidden_state is None:
+        #     self.hidden_state = torch.zeros(rnn_input.shape[0], self.rnn_layers, self.rnn_hidden_size)
         
+        # print("RNN input: ", rnn_input.shape)
+        # print("hidden_state: ", self.hidden_state.shape)
+        # print("masks: ", masks.shape)
+        masks = masks.cuda()
         out, self.hidden_state = self.rnn.forward(rnn_input, self.hidden_state, masks)
+        self.hidden_state = self.hidden_state.detach()
 
         return self.rnn_linear(out)
 
+class VisionEncoder(nn.Module):
+    def __init__(
+        self,
+        image_size=[180, 320, 1],
+        cnn_output_size=32,
+        rnn_hidden_size=64,
+        rnn_out_size=32
+    ):
+        super(VisionEncoder, self).__init__()
+        self.encoder = CNNRNN(image_size, cnn_output_size, rnn_hidden_size, rnn_out_size)
+        print(f"(Student) ENCODER MLP: {self.encoder}")
 
-class ActorEncoder(nn.Module):
+
+
+    def forward(self, obs):
+        """Takes full observations, then will throw out the depth map itself"""
+        return self.encoder(obs, masks=torch.tensor([True]))
+
+
+
+
+class Actor(nn.Module):
     is_recurrent = False
 
     def __init__(
         self,
         num_actor_obs,
         num_actions,
-        actor_hidden_dims=[256, 256, 256],
+        actor_hidden_dims=[512, 256, 128],
         image_size=[180, 320, 1],
         cnn_output_size=32,
         rnn_hidden_size=64,
@@ -71,7 +96,7 @@ class ActorEncoder(nn.Module):
                 "ActorCritic.__init__ got unexpected arguments, which will be ignored: "
                 + str([key for key in kwargs.keys()])
             )
-        super(ActorEncoder, self).__init__()
+        super(Actor, self).__init__()
 
         activation = get_activation(activation)
         self.train_type = train_type
@@ -91,10 +116,8 @@ class ActorEncoder(nn.Module):
                 )
                 actor_layers.append(activation)
         self.actor = nn.Sequential(*actor_layers)
-        self.encoder = CNNRNN(image_size, cnn_output_size, rnn_hidden_size, rnn_out_size)
 
         print(f"(Student) Actor MLP: {self.actor}")
-        print(f"(Student) ENCODER MLP: {self.encoder}")
         print("(Student) Train Type: ", self.train_type)
 
         # self.encoder_input_rows, self.encoder_input_cols, _ = encoder_input_size
@@ -144,9 +167,7 @@ class ActorEncoder(nn.Module):
     def parse_observations(self, observations):
         return observations[:, :48], observations[:, 48:48+187], observations[:, 48+187:]
 
-    def act(self, observations, **kwargs):
-        proprio, depth_map, image = self.parse_observations(observations)
-        enc_depth_map = self.encoder(observations)
+    def act(self, proprio, enc_depth_map, **kwargs):
         observations = torch.cat((proprio, enc_depth_map), dim=-1)
 
         self.update_distribution(observations)
@@ -155,16 +176,11 @@ class ActorEncoder(nn.Module):
     def get_actions_log_prob(self, actions):
         return self.distribution.log_prob(actions).sum(dim=-1)
 
-    def act_inference(self, observations):
-        proprio, depth_map, image = self.parse_observations(observations)
-        enc_depth_map = self.encoder(observations)
+    def act_inference(self, proprio, enc_depth_map):
         observations = torch.cat((proprio, enc_depth_map), dim=-1)
 
         actions_mean = self.actor(observations)
         return actions_mean
-
-    def encode(self, image):
-        return self.encoder(image)
 
 
 def get_activation(act_name):

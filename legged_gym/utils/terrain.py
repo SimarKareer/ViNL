@@ -34,7 +34,16 @@ from scipy import interpolate
 
 from isaacgym import terrain_utils
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg
+import imageio
 
+def to_shape(a, shape):
+    y_, x_ = shape
+    y, x = a.shape
+    y_pad = (y_-y)
+    x_pad = (x_-x)
+    return np.pad(a,((y_pad//2, y_pad//2 + y_pad%2), 
+                     (x_pad//2, x_pad//2 + x_pad%2)),
+                  mode = 'constant')
 
 class Terrain:
     def __init__(self, cfg: LeggedRobotCfg.terrain, num_robots) -> None:
@@ -58,18 +67,30 @@ class Terrain:
         self.length_per_env_pixels = int(self.env_length / cfg.horizontal_scale)
 
         self.border = int(cfg.border_size / self.cfg.horizontal_scale)
+        print("BORDER: ", self.border, cfg.border_size)
         self.tot_cols = int(cfg.num_cols * self.width_per_env_pixels) + 2 * self.border
         self.tot_rows = int(cfg.num_rows * self.length_per_env_pixels) + 2 * self.border
 
         self.height_field_raw = np.zeros((self.tot_rows, self.tot_cols), dtype=np.int16)
-        if cfg.curriculum:
+        if cfg.map_path:
+            im = np.array(imageio.imread(cfg.map_path))
+            im = im[:, :, 3]
+            scaled_im = im.repeat(3, axis=0).repeat(3, axis=1)
+            self.height_field_raw = to_shape(scaled_im, (900, 900))
+
+        elif cfg.curriculum:
             self.curiculum()
         elif cfg.selected:
             self.selected_terrain()
         else:
             self.randomized_terrain()
 
+        # maze = np.array([
+        #     [1, ]
+        # ])
+
         self.heightsamples = self.height_field_raw
+        print(f"{self.heightsamples.shape=}")
         if self.type == "trimesh":
             (
                 self.vertices,
@@ -92,8 +113,8 @@ class Terrain:
             self.add_terrain_to_map(terrain, i, j)
 
     def curiculum(self):
-        for j in range(self.cfg.num_cols):
-            for i in range(self.cfg.num_rows):
+        for j in range(self.cfg.tot_cols):
+            for i in range(self.cfg.tot_rows):
                 difficulty = i / self.cfg.num_rows
                 choice = j / self.cfg.num_cols + 0.001
 

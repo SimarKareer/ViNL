@@ -55,6 +55,7 @@ class AliengoObsCfg(LeggedRobotCfg):
     class terrain(LeggedRobotCfg.terrain):
         # terrain_proportions = [0.1, 0.1, 0.2, 0.2, 0.2, 0.2]
         terrain_proportions = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+        border = 50
         mesh_type = "trimesh"
 
     class init_state(LeggedRobotCfg.init_state):
@@ -132,12 +133,12 @@ class AliengoObsCfgPPO(LeggedRobotCfgPPO):
     
     class runner(LeggedRobotCfgPPO.runner):
         run_name = "ObsEncDM"
+        alg = "ppo"
         # run_name = ""
         experiment_name = "obs_aliengo"
         load_run = -1
         max_iterations = 3000  # number of policy updates
 
         resume = True
-        resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/rough_aliengo/Apr26_17-34-03_RoughTerrainDMEnc/model_1500.pt" # latest DMENC run
-        # resume_path = "./logs/rough_aliengo/Mar17_14-15-38_/model_1500.pt" standard run rough terrain
-        # resume_path = "./logs/obs_aliengo/Apr07_12-17-33_NoObsRewards/model_3000.pt" eval path
+        resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/rough_aliengo/Jul22_12-01-58_RoughTerrainDMEnc/model_1500.pt"
+        # resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Jul22_12-33-19_ObsEncDM/model_4500.pt"

@@ -28,6 +28,7 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
+from isaacgym import gymapi
 from legged_gym import LEGGED_GYM_ROOT_DIR
 import os
 
@@ -53,8 +54,10 @@ def play(args):
     env_cfg.domain_rand.push_robots = False
 
     # prepare environment
-    env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
+    env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg, record=True)
+    env.reset()
     obs = env.get_observations()
+    # print("obs shape: ", obs.shape)
     # load policy
     train_cfg.runner.resume = True
     ppo_runner, train_cfg = task_registry.make_alg_runner(
@@ -87,9 +90,9 @@ def play(args):
     img_idx = 0
 
     # obs_actions_motor = []
-    actions_record = np.zeros((1000, 12))
-    torque_record = np.zeros((1000, 12))
-    obs_record = np.zeros((1000, 48))
+    # actions_record = np.zeros((1000, 12))
+    # torque_record = np.zeros((1000, 12))
+    # obs_record = np.zeros((1000, 48))
 
     for i in range(10 * int(env.max_episode_length)):
         if train_cfg.runner.eval_baseline:
@@ -97,30 +100,36 @@ def play(args):
         else:
             actions = policy(obs.detach())
 
-        actions_record[i] = actions.detach().cpu()[0]
-        obs_record[i] = obs.detach().cpu()[0]
-        torque_record[i] = env._compute_torques(actions).detach().cpu()[0]
+        # actions_record[i] = actions.detach().cpu()[0]
+        # obs_record[i] = obs.detach().cpu()[0]
+        # torque_record[i] = env._compute_torques(actions).detach().cpu()[0]
 
-        # print(obs.shape)
-        if i == 999:
-            pickle.dump(actions_record, open("actions.p", "wb"))
-            pickle.dump(obs_record, open("obs.p", "wb"))
-            pickle.dump(torque_record, open("torque.p", "wb"))
-            break
+        # # print(obs.shape)
+        # if i == 999:
+        #     pickle.dump(actions_record, open("actions.p", "wb"))
+        #     pickle.dump(obs_record, open("obs.p", "wb"))
+        #     pickle.dump(torque_record, open("torque.p", "wb"))
+        #     break
 
         obs, _, rews, dones, infos = env.step(actions.detach())
 
         if RECORD_FRAMES:
             if i % 2:
                 filename = os.path.join(
-                    LEGGED_GYM_ROOT_DIR,
+                    # LEGGED_GYM_ROOT_DIR,
+                    "/home/simar/Projects/isaacVL/localDev/legged_gym",
                     "logs",
                     train_cfg.runner.experiment_name,
                     "exported",
                     "frames",
                     f"{img_idx}.png",
                 )
+                # filename = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/exported/frames/1.png"
+                # print(filename)
+                # print("env viewer", env.viewer)
+                # print(env.camera_handles[0])
                 env.gym.write_viewer_image_to_file(env.viewer, filename)
+                # env.gym.write_camera_image_to_file(env.sim, env.camera_handles[0], gymapi.IMAGE_COLOR, filename)
                 img_idx += 1
         if MOVE_CAMERA:
             camera_position += camera_vel * env.dt
@@ -160,7 +169,7 @@ def play(args):
 
 
 if __name__ == "__main__":
-    EXPORT_POLICY = True
+    EXPORT_POLICY = False
     RECORD_FRAMES = False
     MOVE_CAMERA = False
     args = get_args()

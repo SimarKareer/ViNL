@@ -58,9 +58,9 @@ class AliengoLbcCfg(LeggedRobotCfg):
 
     class terrain(LeggedRobotCfg.terrain):
         # terrain_proportions = [0.1, 0.1, 0.2, 0.2, 0.2, 0.2]
-        map_path = "resources/maps/map1.png"
         terrain_proportions = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         mesh_type = "trimesh"
+        map_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/resources/maps/map1.png"
 
     class init_state(LeggedRobotCfg.init_state):
         pos = [0.0, 0.0, 0.38]  # x,y,z [m]

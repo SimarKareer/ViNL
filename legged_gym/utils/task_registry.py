@@ -77,7 +77,7 @@ class TaskRegistry:
         env_cfg.seed = train_cfg.seed
         return env_cfg, train_cfg
 
-    def make_env(self, name, args=None, env_cfg=None) -> Tuple[VecEnv, LeggedRobotCfg]:
+    def make_env(self, name, args=None, env_cfg=None, record=False) -> Tuple[VecEnv, LeggedRobotCfg]:
         """ Creates an environment either from a registered namme or from the provided config file.
 
         Args:
@@ -115,11 +115,12 @@ class TaskRegistry:
             physics_engine=args.physics_engine,
             sim_device=args.sim_device,
             headless=args.headless,
+            record=record
         )
         return env, env_cfg
 
     def make_alg_runner(
-        self, env, name=None, args=None, train_cfg=None, log_root="default", alg_name="PPO"
+        self, env, name=None, args=None, train_cfg=None, log_root="default"
     ) -> Tuple[OnPolicyRunner, LeggedRobotCfgPPO]:
         """ Creates the training algorithm  either from a registered namme or from the provided config file.
 
@@ -175,10 +176,10 @@ class TaskRegistry:
             )
 
         train_cfg_dict = class_to_dict(train_cfg)
-        if alg_name == "PPO":
-            runner = OnPolicyRunner(env, train_cfg_dict, log_dir, device=args.rl_device)
-        elif alg_name == "LBC":
+        if train_cfg.runner.alg == "lbc":
             runner = LbcRunner(env, train_cfg_dict, log_dir, device=args.rl_device)
+        else:
+            runner = OnPolicyRunner(env, train_cfg_dict, log_dir, device=args.rl_device)
         # save resume path before creating a new log_dir
         resume = train_cfg.runner.resume
         if resume:

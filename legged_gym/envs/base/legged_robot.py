@@ -101,6 +101,7 @@ class LeggedRobot(BaseTask):
         Args:
             actions (torch.Tensor): Tensor of shape (num_envs, num_actions_per_env)
         """
+        # print("in step")
         clip_actions = self.cfg.normalization.clip_actions
         self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
         # step physics and render each frame
@@ -115,6 +116,7 @@ class LeggedRobot(BaseTask):
             if self.device == "cpu":
                 self.gym.fetch_results(self.sim, True)
             self.gym.refresh_dof_state_tensor(self.sim)
+        # print("calling post phys step")
         self.post_physics_step()
 
         # return clipped obs, clipped states (None), rewards, dones and infos
@@ -162,6 +164,7 @@ class LeggedRobot(BaseTask):
         self.compute_reward()
         self.compute_eval()
         env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
+        # print("in post phys calling reset idx")
         self.reset_idx(env_ids)
         self.compute_observations()  # in some cases a simulation step might be required to refresh some obs (for example body positions)
 
@@ -197,6 +200,14 @@ class LeggedRobot(BaseTask):
         Args:
             env_ids (list[int]): List of environment ids which must be reset
         """
+        if "episode" not in self.extras:
+            self.extras["episode"] = {}
+        for key in self.eval_sums.keys():
+            self.extras["episode"]["eval_" + key] = torch.mean(
+                self.eval_sums[key]
+            )  # / self.max_episode_length_s
+            self.eval_sums[key][:] = 0.0
+
         if len(env_ids) == 0:
             return
         # update curriculum
@@ -221,18 +232,11 @@ class LeggedRobot(BaseTask):
         self.episode_length_buf[env_ids] = 0
         self.reset_buf[env_ids] = 1
         # fill extras
-        self.extras["episode"] = {}
         for key in self.episode_sums.keys():
             self.extras["episode"]["rew_" + key] = (
                 torch.mean(self.episode_sums[key][env_ids]) / self.max_episode_length_s
             )
             self.episode_sums[key][env_ids] = 0.0
-
-        for key in self.eval_sums.keys():
-            self.extras["episode"]["eval_" + key] = torch.mean(
-                self.eval_sums[key]
-            )  # / self.max_episode_length_s
-            self.eval_sums[key][:] = 0.0
 
         # log additional curriculum info
         if self.cfg.terrain.curriculum:
@@ -359,8 +363,9 @@ class LeggedRobot(BaseTask):
                         gymapi.IMAGE_DEPTH,
                     )
                     im = gymtorch.wrap_tensor(im)
+                    # print(im)
                     image_buf[i] = im
-                    print("im shape: ", im.shape)
+                    # print("im shape: ", im.shape)
 
                     if self.cfg.env.save_im:
                         trans_im = im.detach().clone()
@@ -371,8 +376,10 @@ class LeggedRobot(BaseTask):
                         # print("image size: ", trans_im.shape)
                         save_image(
                             trans_im.view((height, width, 1)).permute(2, 0, 1).float(),
-                            "images/dim" + str(self.count) + ".png",
+                            f"images/dim/{i}_{self.count}.png",
                         )
+                        # if self.count == 500:
+                        #     exit()
 
             self.gym.end_access_image_tensors(self.sim)
             self.obs_buf = torch.cat((self.obs_buf, image_buf.view(self.cfg.env.num_envs, -1)), dim=-1)

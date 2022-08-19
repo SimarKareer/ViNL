@@ -54,8 +54,9 @@ class BaseTask:
 
         # graphics device for rendering, -1 for no rendering
         self.graphics_device_id = self.sim_device_id
-        if self.headless == True:
-            self.graphics_device_id = -1
+        # it seems like this line is turning off all rendering when headless, which prevents cameras.
+        # if self.headless == True:
+        #     self.graphics_device_id = -1
 
         self.num_envs = cfg.env.num_envs
         self.num_obs = cfg.env.num_observations
@@ -143,7 +144,7 @@ class BaseTask:
         raise NotImplementedError
 
     def render(self, sync_frame_time=True):
-        if self.cfg.env.train_type == "lbc":
+        if self.cfg.env.camera_res is not None:
             self.gym.render_all_camera_sensors(self.sim)
 
         if self.viewer:
@@ -158,13 +159,15 @@ class BaseTask:
                 elif evt.action == "toggle_viewer_sync" and evt.value > 0:
                     self.enable_viewer_sync = not self.enable_viewer_sync
 
+        if self.cfg.env.camera_res is not None or self.viewer:
             # fetch results
             if self.device != "cpu":
                 self.gym.fetch_results(self.sim, True)
+            self.gym.step_graphics(self.sim)
 
+        if self.viewer:
             # step graphics
             if self.enable_viewer_sync:
-                self.gym.step_graphics(self.sim)
                 self.gym.draw_viewer(self.viewer, self.sim, True)
                 if sync_frame_time:
                     self.gym.sync_frame_time(self.sim)
