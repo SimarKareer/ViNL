@@ -40,11 +40,9 @@ changes from a1 to aliengo
 """
 
 
-class AliengoLbcCfg(LeggedRobotCfg):
+class AliengoNavCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 30
-        # num_envs = 4096 # was getting a seg fault
-        # num_envs = 2
+        # num_envs = 30 This value is ignored in play.py.  Use num_test_envs
         num_actions = 12
         num_observations = 235
         num_proprio_obs = 48
@@ -131,7 +129,7 @@ class AliengoLbcCfg(LeggedRobotCfg):
         add_noise = False
 
 
-class AliengoLbcCfgPPO(LeggedRobotCfgPPO):
+class AliengoNavCfgAlg(LeggedRobotCfgPPO):
     class obsSize(LeggedRobotCfgPPO.obsSize):
         encoder_hidden_dims = [128, 64, 32]
         cnn_out_size = 32
@@ -144,7 +142,7 @@ class AliengoLbcCfgPPO(LeggedRobotCfgPPO):
         experiment_name = "lbc_aliengo"
         load_run = -1
         max_iterations = 10000  # number of policy updates
-        num_test_envs = 30
+        num_test_envs = 1
 
         resume = True
         resume_path = (

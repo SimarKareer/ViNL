@@ -30,10 +30,13 @@
 
 from legged_gym import LEGGED_GYM_ROOT_DIR, LEGGED_GYM_ENVS_DIR
 from legged_gym.envs.a1.a1_config import A1RoughCfg, A1RoughCfgPPO
+from legged_gym.envs.aliengo.mixed_terrains.aliengo_nav_config import AliengoNavCfg, AliengoNavCfgAlg
 from .base.legged_robot import LeggedRobot
+
 
 from .anymal_c.anymal import Anymal
 from .aliengo.aliengo import Aliengo
+from .aliengo.aliengoNav import AliengoNav
 
 from .aliengo.mixed_terrains.aliengo_rough_config import (
     AliengoRoughCfg,
@@ -70,6 +73,9 @@ task_registry.register(
 )
 task_registry.register("aliengo_obs", Aliengo, AliengoObsCfg(), AliengoObsCfgPPO())
 task_registry.register("aliengo_lbc", Aliengo, AliengoLbcCfg(), AliengoLbcCfgPPO())
+
+task_registry.register("aliengo_nav", AliengoNav, AliengoNavCfg(), AliengoNavCfgAlg())
+
 task_registry.register("anymal_b", Anymal, AnymalBRoughCfg(), AnymalBRoughCfgPPO())
 task_registry.register("a1", LeggedRobot, A1RoughCfg(), A1RoughCfgPPO())
 task_registry.register("cassie", Cassie, CassieRoughCfg(), CassieRoughCfgPPO())
