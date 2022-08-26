@@ -28,29 +28,19 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from time import time
 import numpy as np
-import os
-
-from isaacgym.torch_utils import *
-from isaacgym import gymtorch, gymapi, gymutil
-
 import torch
+from isaacgym import gymapi, gymtorch, gymutil
 
-# from torch.tensor import Tensor
-from typing import Tuple, Dict
-
-# from legged_gym.envs import LeggedRobot
-from legged_gym import LEGGED_GYM_ROOT_DIR
-from .mixed_terrains.aliengo_rough_config import AliengoRoughCfg
 from legged_gym.envs.base.legged_robot_nav import LeggedRobotNav
+
+from .mixed_terrains.aliengo_rough_config import AliengoRoughCfg
 
 
 class AliengoNav(LeggedRobotNav):
     cfg: AliengoRoughCfg
 
     def make_handle_trans(self, cfg, angle, env_num):
-        # TODO Add camera sensors here?
         camera_props = gymapi.CameraProperties()
         # print("FOV: ", camera_props.horizontal_fov)
         # camera_props.horizontal_fov = 75.0
@@ -84,7 +74,7 @@ class AliengoNav(LeggedRobotNav):
             print("INITIALIZING 2 CAMERAS")
             for i in range(self.num_envs):
 
-                cam1, trans1 = self.make_handle_trans(cfg, 3.14/6, i)
+                cam1, trans1 = self.make_handle_trans(cfg, np.deg2rad(30), i)
                 cam2, trans2 = self.make_handle_trans(cfg, 0.0, i)
                 
                 self.camera_handles.append(cam1)
