@@ -58,7 +58,7 @@ class LeggedRobotNav(LeggedRobot):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
 
     def step(self, actions):
-        """ Apply actions, simulate, call self.post_physics_step()
+        """Apply actions, simulate, call self.post_physics_step()
 
         Args:
             actions (torch.Tensor): Tensor of shape (num_envs, num_actions_per_env)
@@ -88,6 +88,7 @@ class LeggedRobotNav(LeggedRobot):
             self.privileged_obs_buf = torch.clip(
                 self.privileged_obs_buf, -clip_obs, clip_obs
             )
+        print(self.obs_buf)
         return (
             self.obs_buf,
             self.privileged_obs_buf,
@@ -97,9 +98,9 @@ class LeggedRobotNav(LeggedRobot):
         )
 
     def post_physics_step(self):
-        """ check terminations, compute observations and rewards
-            calls self._post_physics_step_callback() for common computations 
-            calls self._draw_debug_vis() if needed
+        """check terminations, compute observations and rewards
+        calls self._post_physics_step_callback() for common computations
+        calls self._draw_debug_vis() if needed
         """
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_net_contact_force_tensor(self.sim)
@@ -136,7 +137,7 @@ class LeggedRobotNav(LeggedRobot):
 
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
-    
+
     def save_im(self, im, path, height, width):
         trans_im = im.detach().clone()
         # print(trans_im)
@@ -152,8 +153,7 @@ class LeggedRobotNav(LeggedRobot):
         #     exit()
 
     def compute_observations(self):
-        """ Computes observations
-        """
+        """Computes observations"""
         # print("lin vel shape: ", (self.base_lin_vel * self.obs_scales.lin_vel).shape)
         # print("ang vel shape: ", (self.base_ang_vel * self.obs_scales.ang_vel).shape)
         # print("gravity shape: ", (self.projected_gravity).shape)
@@ -178,7 +178,9 @@ class LeggedRobotNav(LeggedRobot):
         if self.cfg.env.train_type == "lbc":
 
             width, height = self.cfg.env.camera_res
-            image_buf = torch.zeros(self.cfg.env.num_envs * 2, height, width).to(self.device)
+            image_buf = torch.zeros(self.cfg.env.num_envs * 2, height, width).to(
+                self.device
+            )
 
             self.gym.start_access_image_tensors(self.sim)
             for i in range(self.num_envs):
@@ -210,14 +212,18 @@ class LeggedRobotNav(LeggedRobot):
                         self.save_im(im, path, height, width)
                         path = f"images/dim/{i}_{self.count}_up.png"
                         self.save_im(im2, path, height, width)
-                        
+
                         if self.count == 50:
                             exit()
                 else:
-                    raise NotImplementedError("rgb not implemented for two cams, just mimic the one camera approach if you need this.")
+                    raise NotImplementedError(
+                        "rgb not implemented for two cams, just mimic the one camera approach if you need this."
+                    )
 
             self.gym.end_access_image_tensors(self.sim)
-            self.obs_buf = torch.cat((self.obs_buf, image_buf.view(self.cfg.env.num_envs, -1)), dim=-1)
+            self.obs_buf = torch.cat(
+                (self.obs_buf, image_buf.view(self.cfg.env.num_envs, -1)), dim=-1
+            )
 
         # add noise if needed
         if self.add_noise:
