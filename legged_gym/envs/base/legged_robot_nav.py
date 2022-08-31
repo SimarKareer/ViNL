@@ -86,7 +86,7 @@ class LeggedRobotNav(LeggedRobot):
             self.privileged_obs_buf = torch.clip(
                 self.privileged_obs_buf, -clip_obs, clip_obs
             )
-        print(self.obs_buf)
+
         return (
             self.obs_buf,
             self.privileged_obs_buf,
@@ -197,6 +197,7 @@ class LeggedRobotNav(LeggedRobot):
                     )
 
             self.gym.end_access_image_tensors(self.sim)
+            print(2132342342, image_buf.shape)
             self.obs_buf = torch.cat(
                 (self.obs_buf, image_buf.view(self.cfg.env.num_envs, -1)), dim=-1
             )
