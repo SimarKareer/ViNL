@@ -7,48 +7,55 @@ from torch.distributions import Normal
 from torch.nn.modules import rnn
 from rsl_rl.modules.models.simple_cnn import SimpleCNN
 from rsl_rl.modules.models.rnn_state_encoder import build_rnn_state_encoder
+
 PROPRIO_SIZE = 48
 
+
 class CNNRNN(nn.Module):
-    def __init__(self, image_size, cnn_out_size, rnn_hidden_size, rnn_out_size, rnn_layers=2):
+    def __init__(
+        self, image_size, cnn_out_size, rnn_hidden_size, rnn_out_size, rnn_layers=2
+    ):
         super().__init__()
 
-        self.image_size=image_size
-
+        self.image_size = image_size
 
         # initialize encoder
-        class observationSpace():
+        class observationSpace:
             def __init__(self):
                 self.spaces = {"depth": torch.zeros(image_size)}
+
         print("CNN OUT SIZE: ", cnn_out_size)
         print("IM SIZE: ", image_size)
 
         self.cnn = SimpleCNN(observationSpace(), cnn_out_size)
 
         self.rnn_layers = rnn_layers
-        self.rnn = build_rnn_state_encoder(cnn_out_size + PROPRIO_SIZE, rnn_hidden_size, rnn_type="lstm", num_layers=rnn_layers)
+        self.rnn = build_rnn_state_encoder(
+            cnn_out_size + PROPRIO_SIZE,
+            rnn_hidden_size,
+            rnn_type="lstm",
+            num_layers=rnn_layers,
+        )
         self.rnn_linear = nn.Linear(rnn_hidden_size, rnn_out_size)
         self.rnn_hidden_size = rnn_hidden_size
         self.hidden_state = None
 
     def forward(self, observations, masks):
-        propprio, _, images = observations[:, :48], observations[:, 48:48+187], observations[:, 48+187:].view(-1, self.image_size[0], self.image_size[1], 1)
-
-        image_enc = self.cnn({"depth": images}) #B, cnn_out
-
-        rnn_input = torch.cat([image_enc, propprio], dim=-1)
-
-        # if self.hidden_state is None:
-        #     self.hidden_state = torch.zeros(rnn_input.shape[0], self.rnn_layers, self.rnn_hidden_size)
-        
-        # print("RNN input: ", rnn_input.shape)
-        # print("hidden_state: ", self.hidden_state.shape)
-        # print("masks: ", masks.shape)
+        prop, _, images = (
+            observations[:, :48],
+            observations[:, 48 : 48 + 187],
+            observations[:, 48 + 187 :].view(
+                -1, self.image_size[0], self.image_size[1], 1
+            ),
+        )
+        image_enc = self.cnn({"depth": images})
+        rnn_input = torch.cat([image_enc, prop], dim=-1)
         masks = masks.cuda()
         out, self.hidden_state = self.rnn.forward(rnn_input, self.hidden_state, masks)
         self.hidden_state = self.hidden_state.detach()
 
         return self.rnn_linear(out)
+
 
 class VisionEncoder(nn.Module):
     def __init__(
@@ -56,19 +63,17 @@ class VisionEncoder(nn.Module):
         image_size=[180, 320, 1],
         cnn_output_size=32,
         rnn_hidden_size=64,
-        rnn_out_size=32
+        rnn_out_size=32,
     ):
         super(VisionEncoder, self).__init__()
-        self.encoder = CNNRNN(image_size, cnn_output_size, rnn_hidden_size, rnn_out_size)
+        self.encoder = CNNRNN(
+            image_size, cnn_output_size, rnn_hidden_size, rnn_out_size
+        )
         print(f"(Student) ENCODER MLP: {self.encoder}")
-
-
 
     def forward(self, obs):
         """Takes full observations, then will throw out the depth map itself"""
         return self.encoder(obs, masks=torch.tensor([True]))
-
-
 
 
 class Actor(nn.Module):
@@ -153,7 +158,7 @@ class Actor(nn.Module):
     def update_distribution(self, observations):
         mean = self.actor(observations)
         self.distribution = Normal(mean, mean * 0.0 + self.std)
-    
+
     # def _trans_dm(self, depth_map):
     #     """
     #         Turn 1d dm to 2d
@@ -165,7 +170,11 @@ class Actor(nn.Module):
     #     return dm_dict
 
     def parse_observations(self, observations):
-        return observations[:, :48], observations[:, 48:48+187], observations[:, 48+187:]
+        return (
+            observations[:, :48],
+            observations[:, 48 : 48 + 187],
+            observations[:, 48 + 187 :],
+        )
 
     def act(self, proprio, enc_depth_map, **kwargs):
         observations = torch.cat((proprio, enc_depth_map), dim=-1)
