@@ -28,25 +28,12 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from legged_gym import LEGGED_GYM_ROOT_DIR, envs
-from time import time
-from warnings import WarningMessage
 from legged_gym.envs.base.legged_robot import LeggedRobot
-import numpy as np
-import os
 
-from isaacgym.torch_utils import *
-from isaacgym import gymtorch, gymapi, gymutil
+from isaacgym.torch_utils import quat_rotate_inverse
+from isaacgym import gymtorch, gymapi
 
 import torch
-from torch import Tensor
-from typing import Tuple, Dict
-
-from legged_gym import LEGGED_GYM_ROOT_DIR
-from legged_gym.envs.base.base_task import BaseTask
-from legged_gym.utils.terrain import Terrain
-from legged_gym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
-from legged_gym.utils.helpers import class_to_dict
 from .legged_robot_config import LeggedRobotCfg
 from torchvision.utils import save_image
 
@@ -81,7 +68,8 @@ class LeggedRobotNav(LeggedRobot):
 
         # return clipped obs, clipped states (None), rewards, dones and infos
         clip_obs = self.cfg.normalization.clip_observations
-        self.obs_buf = torch.clip(self.obs_buf, -clip_obs, clip_obs)
+        for k, v in self.obs_buf.items():
+            self.obs_buf[k] = torch.clip(v, -clip_obs, clip_obs)
         if self.privileged_obs_buf is not None:
             self.privileged_obs_buf = torch.clip(
                 self.privileged_obs_buf, -clip_obs, clip_obs
@@ -126,7 +114,9 @@ class LeggedRobotNav(LeggedRobot):
         self.compute_eval()
         env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
         self.reset_idx(env_ids)
-        self.compute_observations()  # in some cases a simulation step might be required to refresh some obs (for example body positions)
+        # in some cases a simulation step might be required
+        # to refresh some obs (for example body positions)
+        self.compute_observations()
 
         self.last_actions[:] = self.actions[:]
         self.last_dof_vel[:] = self.dof_vel[:]
@@ -145,65 +135,57 @@ class LeggedRobotNav(LeggedRobot):
         )
 
     def compute_observations(self):
-        self.obs_buf = torch.cat(
+        self.count += 1
+        prop = torch.cat(
             (
-                torch.tensor([[-1]]).cuda(),
-                torch.tensor([[-1]]).cuda()
-                # @Naoki put rho theta here
+                self.base_lin_vel * self.obs_scales.lin_vel,
+                self.base_ang_vel * self.obs_scales.ang_vel,
+                self.projected_gravity,
+                self.commands[:, :3] * self.commands_scale,
+                (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,
+                self.dof_vel * self.obs_scales.dof_vel,
+                self.actions,
             ),
             dim=-1,
         )
-        self.count += 1
+        rho_theta = torch.cat(  # TODO
+            (torch.tensor([[-1]]).cuda(), torch.tensor([[-1]]).cuda()),
+            dim=-1,
+        )
+        level_image, tilted_image = self.get_images()
+        self.obs_buf = {
+            "proprioception": prop,
+            "level_image": level_image,
+            "tilted_image": tilted_image,
+            "rho_theta": rho_theta,
+        }
 
-        if self.cfg.env.train_type == "lbc":
+    def get_images(self):
+        i = 0
+        assert self.cfg.env.camera_type == "d" and self.num_envs == 1
+        self.gym.start_access_image_tensors(self.sim)
+        images = [
+            gymtorch.wrap_tensor(
+                self.gym.get_camera_image_gpu_tensor(
+                    self.sim,
+                    self.envs[i],
+                    self.camera_handles[2 * i + cam_id],
+                    gymapi.IMAGE_DEPTH,
+                )
+            ).unsqueeze(0).unsqueeze(-1)
+            for cam_id in range(2)
+        ]
+        self.gym.end_access_image_tensors(self.sim)
+        level_image, tilted_image = images
 
+        if self.cfg.env.save_im:
             width, height = self.cfg.env.camera_res
-            image_buf = torch.zeros(self.cfg.env.num_envs * 2, height, width).to(
-                self.device
-            )
+            path = f"images/dim/{i}_{self.count}_down.png"
+            self.save_im(images[0], path, height, width)
+            path = f"images/dim/{i}_{self.count}_up.png"
+            self.save_im(images[1], path, height, width)
 
-            self.gym.start_access_image_tensors(self.sim)
-            for i in range(self.num_envs):
-                if self.cfg.env.camera_type == "d":
-                    im = self.gym.get_camera_image_gpu_tensor(
-                        self.sim,
-                        self.envs[i],
-                        self.camera_handles[2 * i],
-                        gymapi.IMAGE_DEPTH,
-                    )
-                    im = gymtorch.wrap_tensor(im)
-                    image_buf[2 * i] = im
+            if self.count == 50:
+                exit()
 
-                    im2 = self.gym.get_camera_image_gpu_tensor(
-                        self.sim,
-                        self.envs[i],
-                        self.camera_handles[2 * i + 1],
-                        gymapi.IMAGE_DEPTH,
-                    )
-                    im2 = gymtorch.wrap_tensor(im2)
-                    image_buf[2 * i + 1] = im2
-
-                    if self.cfg.env.save_im:
-                        path = f"images/dim/{i}_{self.count}_down.png"
-                        self.save_im(im, path, height, width)
-                        path = f"images/dim/{i}_{self.count}_up.png"
-                        self.save_im(im2, path, height, width)
-
-                        if self.count == 50:
-                            exit()
-                else:
-                    raise NotImplementedError(
-                        "rgb not implemented for two cams, just mimic the one camera approach if you need this."
-                    )
-
-            self.gym.end_access_image_tensors(self.sim)
-            print(2132342342, image_buf.shape)
-            self.obs_buf = torch.cat(
-                (self.obs_buf, image_buf.view(self.cfg.env.num_envs, -1)), dim=-1
-            )
-
-        # add noise if needed
-        if self.add_noise:
-            self.obs_buf += (
-                2 * torch.rand_like(self.obs_buf) - 1
-            ) * self.noise_scale_vec
+        return level_image, tilted_image

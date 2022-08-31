@@ -41,13 +41,19 @@ class CNNRNN(nn.Module):
         self.hidden_state = None
 
     def forward(self, observations, masks):
-        prop, _, images = (
-            observations[:, :48],
-            observations[:, 48 : 48 + 187],
-            observations[:, 48 + 187 :].view(
-                -1, self.image_size[0], self.image_size[1], 1
-            ),
-        )
+        if isinstance(observations, torch.Tensor):
+            prop, _, images = (
+                observations[:, :48],
+                observations[:, 48 : 48 + 187],
+                observations[:, 48 + 187 :].view(
+                    -1, self.image_size[0], self.image_size[1], 1
+                ),
+            )
+        elif isinstance(observations, dict):
+            prop = observations["proprioception"]
+            images = observations["tilted_image"]
+        else:
+            raise RuntimeError(f"Obs type {type(observations)} invalid!")
         image_enc = self.cnn({"depth": images})
         rnn_input = torch.cat([image_enc, prop], dim=-1)
         masks = masks.cuda()
@@ -133,10 +139,6 @@ class Actor(nn.Module):
         # disable args validation for speedup
         Normal.set_default_validate_args = False
 
-        # seems that we get better performance without init
-        # self.init_memory_weights(self.memory_a, 0.001, 0.)
-        # self.init_memory_weights(self.memory_c, 0.001, 0.)
-
     def reset(self, dones=None):
         pass
 
@@ -158,16 +160,6 @@ class Actor(nn.Module):
     def update_distribution(self, observations):
         mean = self.actor(observations)
         self.distribution = Normal(mean, mean * 0.0 + self.std)
-
-    # def _trans_dm(self, depth_map):
-    #     """
-    #         Turn 1d dm to 2d
-    #     """
-    #     envs, _ = depth_map.shape
-    #     depth_map = depth_map.view(envs, self.encoder_input_rows, self.encoder_input_cols, 1)
-
-    #     dm_dict = {"depth": depth_map}
-    #     return dm_dict
 
     def parse_observations(self, observations):
         return (

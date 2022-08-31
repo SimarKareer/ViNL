@@ -98,7 +98,7 @@ def play(args):
         if train_cfg.runner.eval_baseline:
             actions = train_cfg.runner.baseline_policy(obs)
         else:
-            actions = policy(obs.detach())
+            actions = policy(obs)
 
         # actions_record[i] = actions.detach().cpu()[0]
         # obs_record[i] = obs.detach().cpu()[0]

@@ -121,23 +121,24 @@ class LBC:
             dot = make_dot(loss, params=dict(itertools.chain(self.dm_encoder.named_parameters(), self.vision_encoder.named_parameters())))
             dot.render(format='png', outfile=f"graph{debug_it}.png")
 
-
-
         self.optimizer.zero_grad()
 
-        # print("backward call!")
         loss.backward()
         self.optimizer.step()
         
         # self.storage.clear()
 
-        # return loss # , reconstruction_loss
-    
     def act_inference(self, obs):
-        prop, depth, image = obs[:, :48], obs[:, 48:48+187], obs[:, 48+187:]
-        student_enc_dm = self.vision_encoder(obs)
-        # student_enc_dm = torch.ones_like(student_enc_dm, device=self.device, requires_grad=True)
+        if isinstance(obs, torch.Tensor):
+            prop = obs[:, :48]
+        elif isinstance(obs, dict):
+            prop = obs["proprioception"]
+        else:
+            raise RuntimeError(f"Obs type {type(obs)} invalid!")
 
-        actions = self.actor.act(prop, student_enc_dm.detach()).detach() #I think i need the inner detach bc we currrently don't want to update the student encoder based on the actions / reward
+        student_enc_dm = self.vision_encoder(obs)
+
+        with torch.no_grad():
+            actions = self.actor.act(prop, student_enc_dm)
 
         return actions
