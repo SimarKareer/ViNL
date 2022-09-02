@@ -28,14 +28,13 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from legged_gym.envs.base.legged_robot import LeggedRobot
-
-from isaacgym.torch_utils import quat_rotate_inverse
-from isaacgym import gymtorch, gymapi
-
 import torch
-from .legged_robot_config import LeggedRobotCfg
+from isaacgym import gymapi, gymtorch
+from isaacgym.torch_utils import quat_rotate_inverse
+from legged_gym.envs.base.legged_robot import LeggedRobot
 from torchvision.utils import save_image
+
+from .legged_robot_config import LeggedRobotCfg
 
 
 class LeggedRobotNav(LeggedRobot):
