@@ -123,6 +123,6 @@ class AliengoRoughCfgPPO(LeggedRobotCfgPPO):
         run_name = "RoughTerrainDMEnc"
         experiment_name = "rough_aliengo"
         load_run = -1
-        resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/rough_aliengo/Jul22_12-01-58_RoughTerrainDMEnc/model_1500.pt"
+        resume_path = "weights/rough_aliengo_Jul22_12-01-58_RoughTerrainDMEnc_model_1500.pt"
         max_iterations = 1500
 

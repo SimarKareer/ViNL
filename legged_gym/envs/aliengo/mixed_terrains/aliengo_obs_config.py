@@ -140,5 +140,5 @@ class AliengoObsCfgPPO(LeggedRobotCfgPPO):
         max_iterations = 3000  # number of policy updates
 
         resume = True
-        resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/rough_aliengo/Jul22_12-01-58_RoughTerrainDMEnc/model_1500.pt"
+        resume_path = "weights/rough_aliengo_Jul22_12-01-58_RoughTerrainDMEnc_model_1500.pt"
         # resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Jul22_12-33-19_ObsEncDM/model_4500.pt"

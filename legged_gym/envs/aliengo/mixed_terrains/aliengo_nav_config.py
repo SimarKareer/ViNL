@@ -58,7 +58,7 @@ class AliengoNavCfg(LeggedRobotCfg):
         # terrain_proportions = [0.1, 0.1, 0.2, 0.2, 0.2, 0.2]
         terrain_proportions = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         mesh_type = "trimesh"
-        map_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/resources/maps/map1.png"
+        map_path = "resources/maps/map1.png"
 
     class init_state(LeggedRobotCfg.init_state):
         pos = [0.0, 0.0, 0.38]  # x,y,z [m]
@@ -145,12 +145,11 @@ class AliengoNavCfgAlg(LeggedRobotCfgPPO):
         num_test_envs = 1
 
         resume = True
-        resume_path = (
-            "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/lbc_aliengo/Aug09_00-01-40_debug/model_10000.pt"
-        )
+        resume_path = "weights/lbc_aliengo_Aug09_00-01-40_debug_model_10000.pt"
+
         # resume_path = "./logs/obs_aliengo/Apr07_12-17-33_NoObsRewards/model_3000.pt"
         # teacher_policy = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/rough_aliengo/Jul22_12-01-58_RoughTerrainDMEnc/model_1500.pt"
-        teacher_policy = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Jul22_12-33-19_ObsEncDM/model_4500.pt"
+        teacher_policy = "weights/obs_aliengo_Jul22_12-33-19_ObsEncDM_model_4500.pt"
 
     class lbc(LeggedRobotCfgPPO.lbc):
         batch_size = 10
