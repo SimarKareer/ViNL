@@ -1,12 +1,12 @@
-import itertools
-
+import numpy as np
 import torch
 import torch.optim as optim
 from legged_gym.lbc.algorithms.lbc_storage import LbcStorage
 from legged_gym.lbc.models.actor_encoder_lbc import Actor, VisionEncoder
 from rsl_rl.modules.actor_critic import DmEncoder
+from rsl_rl.modules.models.kin_policy import NavPolicy
 
-# import pydot
+NAV_INTERVAL = 10
 
 
 class LBC:
@@ -24,8 +24,8 @@ class LBC:
         learning_rate=1e-3,
         schedule="fixed",
         device="cpu",
+        kin_nav_policy=None,
     ):
-
         self.device = device
 
         self.schedule = schedule
@@ -41,12 +41,19 @@ class LBC:
         self.dm_encoder = dm_encoder
         self.dm_encoder.to(self.device)
 
-        # self.storage = self.init_storage()  # Currently bc using LSTM we don't need storage buffer
         self.optimizer = optim.Adam(self.vision_encoder.parameters(), lr=learning_rate)
 
         # LBC parameters
         self.num_learning_epochs = num_learning_epochs
         self.num_mini_batches = num_mini_batches
+
+        # Nav-specific
+        if kin_nav_policy is not None:
+            print(f"Loading the navigation policy: {kin_nav_policy}")
+            self.kin_nav_policy = NavPolicy(kin_nav_policy, device="cuda")
+            self.kin_nav_policy.reset()
+        self.poll_count = 0
+        self.lin_vel, self.ang_vel = torch.zeros(2)
 
     def init_storage(self):
         self.storage = (
@@ -72,13 +79,10 @@ class LBC:
             actions:
             loss: the supervised loss for this set of obs
         """
-        # if self.actor_critic.is_recurrent:
-        #     self.transition.hidden_states = self.actor_critic.get_hidden_states()
 
         # Compute the actions and values
         prop, depth, image = obs[:, :48], obs[:, 48 : 48 + 187], obs[:, 48 + 187 :]
         student_enc_dm = self.vision_encoder(obs)
-        # student_enc_dm = torch.ones_like(student_enc_dm, device=self.device, requires_grad=True)
 
         actions = self.actor.act(
             prop, student_enc_dm.detach()
@@ -87,13 +91,7 @@ class LBC:
         with torch.no_grad():
             teacher_enc_dm = self.dm_encoder(depth)
 
-        # actions = self.actor.act(prop, teacher_enc_dm.detach()).detach() # TODO: rm, this is just a baseline
-
-        # print("Encoded shapes: ", student_enc_dm.shape, teacher_enc_dm.shape)
         loss = torch.nn.functional.mse_loss(student_enc_dm, teacher_enc_dm)
-
-        # need to record obs and critic_obs before env.step()
-        # self.storage.add_pair(image_slice, dm_slice)   #TODO if we ever actually need an image buffer we'll use this
 
         return actions, loss
 
@@ -102,38 +100,15 @@ class LBC:
 
     def update(self, loss, debug_it=None):
         """Performs the supervised loss update"""
-        # if self.actor_critic.is_recurrent:
-        #     generator = self.storage.reccurent_mini_batch_generator(
-        #         self.num_mini_batches, self.num_learning_epochs
-        #     )
-        # else:
-        #     generator = self.storage.mini_batch_generator(
-        #         self.num_mini_batches, self.num_learning_epochs
-        #     )
-
-        # image_batch = self.storage.image_batch() #TODO if we need storage use this
-        # depth_batch = self.storage.dm_batch()
-
-        if debug_it is not None:
-            dot = make_dot(
-                loss,
-                params=dict(
-                    itertools.chain(
-                        self.dm_encoder.named_parameters(),
-                        self.vision_encoder.named_parameters(),
-                    )
-                ),
-            )
-            dot.render(format="png", outfile=f"graph{debug_it}.png")
-
         self.optimizer.zero_grad()
 
         loss.backward()
         self.optimizer.step()
 
-        # self.storage.clear()
-
     def act_inference(self, obs):
+        if self.kin_nav_policy is not None:
+            obs = self.update_cmds(obs)
+
         if isinstance(obs, torch.Tensor):
             prop = obs[:, :48]
         elif isinstance(obs, dict):
@@ -147,3 +122,32 @@ class LBC:
             actions = self.actor.act(prop, student_enc_dm)
 
         return actions
+
+    def update_cmds(self, obs):
+        if (self.poll_count - 1) % NAV_INTERVAL == 0:
+            rho_theta = torch.tensor(obs["rho_theta"], dtype=torch.float32)
+            level_depth = obs["level_image"].squeeze(0)
+            level_depth = torch.clip(-level_depth, 0, 10.0) / 10.0
+            kin_obs = {
+                "depth": level_depth,
+                "pointgoal_with_gps_compass": rho_theta,
+            }
+
+            actions = self.kin_nav_policy.act(kin_obs)
+            self.lin_vel, self.ang_vel = actions
+            self.lin_vel = (self.lin_vel + 1.0) / 2.0
+            rt = rho_theta.cpu().numpy().tolist()
+            rt[1] = np.rad2deg(rt[1])
+            print("rho_theta:", rt)
+            print(
+                "kin_actions",
+                self.lin_vel.item() * 0.25,
+                np.rad2deg(self.ang_vel.item() * np.deg2rad(30)),
+            )
+        self.poll_count += 1
+
+        obs["proprioception"][0, 9] *= self.lin_vel.item() * 0.25
+        obs["proprioception"][0, 10] *= self.ang_vel.item() * np.deg2rad(30)
+        obs["proprioception"][0, 11] = 0  # no hor vel
+
+        return obs

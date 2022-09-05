@@ -28,13 +28,35 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
+import cv2
+import numpy as np
+import quaternion
 import torch
 from isaacgym import gymapi, gymtorch
-from isaacgym.torch_utils import quat_rotate_inverse
+from isaacgym.torch_utils import get_euler_xyz, quat_rotate_inverse
 from legged_gym.envs.base.legged_robot import LeggedRobot
 from torchvision.utils import save_image
 
 from .legged_robot_config import LeggedRobotCfg
+
+SHOW = False
+PRINT_RT = False
+
+
+def wrap_heading(heading):
+    return (heading + np.pi) % (2 * np.pi) - np.pi
+
+
+def quat_to_yaw(quat):
+    original_euler = quaternion.as_euler_angles(quat)
+    euler_angles = np.array(
+        [
+            (np.random.rand() - 0.5) * np.pi / 9.0 + original_euler[0],
+            (np.random.rand() - 0.5) * np.pi / 9.0 + original_euler[1],
+            (np.random.rand() - 0.5) * np.pi / 9.0 + original_euler[2],
+        ]
+    )
+    return euler_angles[2]
 
 
 class LeggedRobotNav(LeggedRobot):
@@ -42,6 +64,28 @@ class LeggedRobotNav(LeggedRobot):
         self, cfg: LeggedRobotCfg, sim_params, physics_engine, sim_device, headless
     ):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
+        self.goal_xy = np.array([13, 14])
+        # self.goal_xy = np.array([12, 20])
+
+    def reset(self):
+        obs = super().reset()
+        start_pos = [12, 15]
+        self.root_states[0, :2] = torch.tensor(start_pos, device="cuda")
+        self.gym.set_actor_root_state_tensor(
+            self.sim, gymtorch.unwrap_tensor(self.root_states)
+        )
+        return obs
+
+    @property
+    def curr_xy(self):
+        return self.root_states[0, :2].cpu().numpy()
+
+    def get_rho_theta(self):
+        yaw = get_euler_xyz(self.root_states[:, 2:6])[-1][-1]
+        rho = np.linalg.norm(self.goal_xy - self.curr_xy)
+        dx, dy = self.goal_xy - self.curr_xy
+        theta = wrap_heading(np.arctan2(dy, dx) - yaw.cpu().numpy())
+        return torch.tensor([rho, theta], device="cuda")
 
     def step(self, actions):
         """Apply actions, simulate, call self.post_physics_step()
@@ -49,6 +93,7 @@ class LeggedRobotNav(LeggedRobot):
         Args:
             actions (torch.Tensor): Tensor of shape (num_envs, num_actions_per_env)
         """
+        self.commands[0, :3] = torch.tensor([1.0, 0.0, 0.0], device="cuda")
         clip_actions = self.cfg.normalization.clip_actions
         self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
         # step physics and render each frame
@@ -58,7 +103,7 @@ class LeggedRobotNav(LeggedRobot):
             self.gym.set_dof_actuation_force_tensor(
                 self.sim, gymtorch.unwrap_tensor(self.torques)
             )
-            self.extras["torque"] = self.torques  # gymtorch.unwrap_tensor(self.torques)
+            self.extras["torque"] = self.torques
             self.gym.simulate(self.sim)
             if self.device == "cpu":
                 self.gym.fetch_results(self.sim, True)
@@ -73,7 +118,6 @@ class LeggedRobotNav(LeggedRobot):
             self.privileged_obs_buf = torch.clip(
                 self.privileged_obs_buf, -clip_obs, clip_obs
             )
-
         return (
             self.obs_buf,
             self.privileged_obs_buf,
@@ -125,8 +169,7 @@ class LeggedRobotNav(LeggedRobot):
             self._draw_debug_vis()
 
     def save_im(self, im, path, height, width):
-        trans_im = im.detach()
-        trans_im = -1 / trans_im
+        trans_im = -1 / im
         trans_im = trans_im / torch.max(trans_im)
         save_image(
             trans_im.view((height, width, 1)).permute(2, 0, 1).float(),
@@ -135,22 +178,22 @@ class LeggedRobotNav(LeggedRobot):
 
     def compute_observations(self):
         self.count += 1
+        dummy_cmd = (
+            torch.ones_like(self.commands[:, :3], device="cuda") * self.commands_scale
+        )
         prop = torch.cat(
             (
                 self.base_lin_vel * self.obs_scales.lin_vel,
                 self.base_ang_vel * self.obs_scales.ang_vel,
                 self.projected_gravity,
-                self.commands[:, :3] * self.commands_scale,
+                dummy_cmd,
                 (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,
                 self.dof_vel * self.obs_scales.dof_vel,
                 self.actions,
             ),
             dim=-1,
         )
-        rho_theta = torch.cat(  # TODO
-            (torch.tensor([[-1]]).cuda(), torch.tensor([[-1]]).cuda()),
-            dim=-1,
-        )
+        rho_theta = self.get_rho_theta()
         level_image, tilted_image = self.get_images()
         self.obs_buf = {
             "proprioception": prop,
@@ -158,6 +201,17 @@ class LeggedRobotNav(LeggedRobot):
             "tilted_image": tilted_image,
             "rho_theta": rho_theta,
         }
+        if PRINT_RT:
+            rt = rho_theta.cpu().numpy().tolist()
+            rt[1] = np.rad2deg(rt[1])
+            print("xy:", self.curr_xy, "\trho_theta:", rt)
+        if SHOW:
+            imgs = [
+                np.uint8(np.clip(-i[0, :, :, 0].cpu().numpy(), 0, 10) / 10 * 255)
+                for i in (level_image, tilted_image)
+            ]
+            cv2.imshow("", np.hstack(imgs))
+            cv2.waitKey(1)
 
     def get_images(self):
         i = 0
@@ -171,11 +225,13 @@ class LeggedRobotNav(LeggedRobot):
                     self.camera_handles[2 * i + cam_id],
                     gymapi.IMAGE_DEPTH,
                 )
-            ).unsqueeze(0).unsqueeze(-1)
+            )
+            .unsqueeze(0)
+            .unsqueeze(-1)
             for cam_id in range(2)
         ]
         self.gym.end_access_image_tensors(self.sim)
-        level_image, tilted_image = images
+        tilted_image, level_image = images
 
         if self.cfg.env.save_im:
             width, height = self.cfg.env.camera_res

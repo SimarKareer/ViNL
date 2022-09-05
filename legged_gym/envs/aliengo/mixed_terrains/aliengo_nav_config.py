@@ -28,7 +28,6 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from base64 import encode
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
 """
@@ -42,13 +41,10 @@ changes from a1 to aliengo
 
 class AliengoNavCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        # num_envs = 30 This value is ignored in play.py.  Use num_test_envs
         num_actions = 12
         num_observations = 235
         num_proprio_obs = 48
         save_im = False
-        # camera_res = [1280, 720]
-        # camera_res = [640, 360]
         camera_res = [320, 180]
         camera_type = "d"  # rgb
         num_privileged_obs = None  # 187
@@ -108,9 +104,7 @@ class AliengoNavCfg(LeggedRobotCfg):
 
         class scales(LeggedRobotCfg.rewards.scales):
             feet_step = -1.0
-            # feet_step = 0.0
             feet_stumble = -1.0
-            # feet_stumble = 0.0
 
     class evals(LeggedRobotCfg.evals):
         feet_stumble = True
@@ -147,9 +141,8 @@ class AliengoNavCfgAlg(LeggedRobotCfgPPO):
         resume = True
         resume_path = "weights/lbc_aliengo_Aug09_00-01-40_debug_model_10000.pt"
 
-        # resume_path = "./logs/obs_aliengo/Apr07_12-17-33_NoObsRewards/model_3000.pt"
-        # teacher_policy = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/rough_aliengo/Jul22_12-01-58_RoughTerrainDMEnc/model_1500.pt"
         teacher_policy = "weights/obs_aliengo_Jul22_12-33-19_ObsEncDM_model_4500.pt"
+        kin_nav_policy = "weights/ckpt.99.pth"
 
     class lbc(LeggedRobotCfgPPO.lbc):
         batch_size = 10
