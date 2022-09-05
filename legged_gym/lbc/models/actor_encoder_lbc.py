@@ -1,12 +1,8 @@
-from matplotlib import image
-import numpy as np
-
 import torch
 import torch.nn as nn
-from torch.distributions import Normal
-from torch.nn.modules import rnn
-from rsl_rl.modules.models.simple_cnn import SimpleCNN
 from rsl_rl.modules.models.rnn_state_encoder import build_rnn_state_encoder
+from rsl_rl.modules.models.simple_cnn import SimpleCNN
+from torch.distributions import Normal
 
 PROPRIO_SIZE = 48
 

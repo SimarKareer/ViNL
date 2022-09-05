@@ -85,10 +85,6 @@ class Terrain:
         else:
             self.randomized_terrain()
 
-        # maze = np.array([
-        #     [1, ]
-        # ])
-
         self.heightsamples = self.height_field_raw
         print(f"{self.heightsamples.shape=}")
         if self.type == "trimesh":
@@ -101,6 +97,10 @@ class Terrain:
                 self.cfg.vertical_scale,
                 self.cfg.slope_treshold,
             )
+            print(8927439287987243798432987234987234)
+            print(self.height_field_raw.shape)
+            print(self.cfg.horizontal_scale)
+            print(self.cfg.vertical_scale)
 
     def randomized_terrain(self):
         for k in range(self.cfg.num_sub_terrains):
