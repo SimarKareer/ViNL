@@ -119,9 +119,9 @@ class AliengoObsCfg(LeggedRobotCfg):
 
     class commands(LeggedRobotCfg.commands):
         class ranges:
-            lin_vel_x = [0.0, 0.5]  # min max [m/s]
+            lin_vel_x = [0.0, 1.0]  # min max [m/s]
             lin_vel_y = [0.0, 0.0]  # min max [m/s]
-            ang_vel_yaw = [-np.deg2rad(60), np.deg2rad(60)]  # min max [rad/s]
+            ang_vel_yaw = [-1.0, 1.0]  # min max [rad/s]
             heading = [-3.14, 3.14]
 
     class noise(LeggedRobotCfg.noise):
@@ -142,5 +142,5 @@ class AliengoObsCfgPPO(LeggedRobotCfgPPO):
 
         resume = True
         resume_path = (
-            "weights/ny_rough_aliengo_Sep06_11-46-01_RoughTerrainDMEnc_model_1500.pt"
+            "weights/rough_aliengo_Sep06_14-03-50_RoughTerrainDMEnc_model_1500.pt"
         )
