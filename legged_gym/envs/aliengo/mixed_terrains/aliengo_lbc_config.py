@@ -57,8 +57,6 @@ class AliengoLbcCfg(LeggedRobotCfg):
         train_type = "lbc"  # standard, priv, lbc
 
     class terrain(LeggedRobotCfg.terrain):
-        # terrain_proportions = [0.1, 0.1, 0.2, 0.2, 0.2, 0.2]
-        map_path = "resources/maps/map1.png"
         terrain_proportions = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         mesh_type = "trimesh"
 

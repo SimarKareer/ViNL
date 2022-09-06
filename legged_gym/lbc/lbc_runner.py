@@ -106,7 +106,7 @@ class LbcRunner:
                 ) = self.env.step(actions)
 
                 self.alg.process_env_step(rewards, dones, infos)
-                print("stumble: ", self.env.extras["episode"]["eval_feet_step"])
+                # print("stumble: ", self.env.extras["episode"]["eval_feet_step"])
 
                 batch_loss += loss
 
