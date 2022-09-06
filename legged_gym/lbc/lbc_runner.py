@@ -52,7 +52,7 @@ class LbcRunner:
             dm_encoder,
             device="cuda",
             learning_rate=1e-4,
-            kin_nav_policy=train_cfg.get("kin_nav_policy", None),
+            kin_nav_policy=train_cfg["runner"].get("kin_nav_policy", None),
         )
         self.save_interval = self.cfg["save_interval"]
 

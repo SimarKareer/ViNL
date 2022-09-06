@@ -64,6 +64,7 @@ class Logger:
         self.plot_process.start()
 
     def _plot(self):
+        return
         nb_rows = 3
         nb_cols = 3
         fig, axs = plt.subplots(nb_rows, nb_cols)
