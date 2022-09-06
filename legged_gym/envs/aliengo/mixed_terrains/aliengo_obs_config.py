@@ -27,6 +27,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
+import numpy as np
 
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
@@ -117,10 +118,10 @@ class AliengoObsCfg(LeggedRobotCfg):
         any_contacts = True
 
     class commands(LeggedRobotCfg.commands):
-        class ranges(LeggedRobotCfg.commands.ranges):
-            lin_vel_x = [0.7, 1.0]  # min max [m/s]
+        class ranges:
+            lin_vel_x = [0.0, 0.5]  # min max [m/s]
             lin_vel_y = [0.0, 0.0]  # min max [m/s]
-            ang_vel_yaw = [-1.0, 1.0]  # min max [rad/s]
+            ang_vel_yaw = [-np.deg2rad(60), np.deg2rad(60)]  # min max [rad/s]
             heading = [-3.14, 3.14]
 
     class noise(LeggedRobotCfg.noise):
@@ -130,7 +131,7 @@ class AliengoObsCfg(LeggedRobotCfg):
 class AliengoObsCfgPPO(LeggedRobotCfgPPO):
     class obsSize(LeggedRobotCfgPPO.obsSize):
         encoder_hidden_dims = [128, 64, 32]
-    
+
     class runner(LeggedRobotCfgPPO.runner):
         run_name = "ObsEncDM"
         alg = "ppo"
@@ -140,5 +141,6 @@ class AliengoObsCfgPPO(LeggedRobotCfgPPO):
         max_iterations = 3000  # number of policy updates
 
         resume = True
-        resume_path = "weights/rough_aliengo_Jul22_12-01-58_RoughTerrainDMEnc_model_1500.pt"
-        # resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Jul22_12-33-19_ObsEncDM/model_4500.pt"
+        resume_path = (
+            "weights/ny_rough_aliengo_Sep06_11-46-01_RoughTerrainDMEnc_model_1500.pt"
+        )

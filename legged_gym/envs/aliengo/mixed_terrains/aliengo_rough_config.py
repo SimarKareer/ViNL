@@ -58,7 +58,7 @@ class AliengoRoughCfg(LeggedRobotCfg):
         max_curriculum = 1.0
         num_commands = 4  # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
         resampling_time = 10.0  # time before command are changed[s]
-        heading_command = False  # if true: compute ang vel command from heading error
+        heading_command = True  # if true: compute ang vel command from heading error
 
         class ranges:
             lin_vel_x = [0.0, 0.5]  # min max [m/s]
@@ -128,15 +128,12 @@ class AliengoRoughCfg(LeggedRobotCfg):
 class AliengoRoughCfgPPO(LeggedRobotCfgPPO):
     class obsSize(LeggedRobotCfgPPO.obsSize):
         encoder_hidden_dims = [128, 64, 32]
-        # encoder_input_size=[17, 11, 1] #x samples (forward facing / rows), y samples(sideways / cols)
-        # encoder_output_size=32
-        # encoder_hidden_dims = None
 
     class runner(LeggedRobotCfgPPO.runner):
         alg = "ppo"
         run_name = "RoughTerrainDMEnc"
         experiment_name = "rough_aliengo"
         load_run = -1
-        resume_path = "weights/rough_aliengo_Jul22_12-01-58_RoughTerrainDMEnc_model_1500.pt"
+        resume_path = "weights/ny_rough_aliengo_Sep06_11-46-01_RoughTerrainDMEnc_model_1500.pt"
         max_iterations = 1500
 
