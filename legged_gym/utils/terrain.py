@@ -28,22 +28,25 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
+import imageio
 import numpy as np
 from numpy.random import choice
-from scipy import interpolate
 
 from isaacgym import terrain_utils
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg
-import imageio
+
 
 def to_shape(a, shape):
     y_, x_ = shape
     y, x = a.shape
-    y_pad = (y_-y)
-    x_pad = (x_-x)
-    return np.pad(a,((y_pad//2, y_pad//2 + y_pad%2), 
-                     (x_pad//2, x_pad//2 + x_pad%2)),
-                  mode = 'constant')
+    y_pad = y_ - y
+    x_pad = x_ - x
+    return np.pad(
+        a,
+        ((y_pad // 2, y_pad // 2 + y_pad % 2), (x_pad // 2, x_pad // 2 + x_pad % 2)),
+        mode="constant",
+    )
+
 
 class Terrain:
     def __init__(self, cfg: LeggedRobotCfg.terrain, num_robots) -> None:
