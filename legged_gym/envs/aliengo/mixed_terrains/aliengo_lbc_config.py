@@ -121,8 +121,8 @@ class AliengoLbcCfg(LeggedRobotCfg):
         any_contacts = True
 
     class commands(LeggedRobotCfg.commands):
-        class ranges(LeggedRobotCfg.commands.ranges):
-            lin_vel_x = [0.7, 1.0]  # min max [m/s]
+        class ranges:
+            lin_vel_x = [0.0, 1.0]  # min max [m/s]
             lin_vel_y = [0.0, 0.0]  # min max [m/s]
             ang_vel_yaw = [-1.0, 1.0]  # min max [rad/s]
             heading = [-3.14, 3.14]
@@ -152,7 +152,7 @@ class AliengoLbcCfgPPO(LeggedRobotCfgPPO):
         )
         # resume_path = "./logs/obs_aliengo/Apr07_12-17-33_NoObsRewards/model_3000.pt"
         # teacher_policy = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/rough_aliengo/Jul22_12-01-58_RoughTerrainDMEnc/model_1500.pt"
-        teacher_policy = "weights/obs_aliengo_Jul22_12-33-19_ObsEncDM_model_4500.pt"
+        teacher_policy = "weights/obs_aliengo_Sep06_14-25-01_ObsEncDM_model_4500.pt"
 
     class lbc(LeggedRobotCfgPPO.lbc):
         batch_size = 10
