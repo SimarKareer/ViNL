@@ -1,12 +1,18 @@
+import cv2
 import numpy as np
 import torch
 import torch.optim as optim
+
 from legged_gym.lbc.algorithms.lbc_storage import LbcStorage
 from legged_gym.lbc.models.actor_encoder_lbc import Actor, VisionEncoder
 from rsl_rl.modules.actor_critic import DmEncoder
 from rsl_rl.modules.models.kin_policy import NavPolicy
 
-NAV_INTERVAL = 10
+NAV_INTERVAL = 12
+MAX_LIN_DIST = 0.2
+MAX_ANG_DIST = 11.46
+IM_SHOW = False
+PRINT_RT = False
 
 
 class LBC:
@@ -53,7 +59,7 @@ class LBC:
             self.kin_nav_policy = NavPolicy(kin_nav_policy, device="cuda")
             self.kin_nav_policy.reset()
         self.poll_count = 0
-        self.lin_vel, self.ang_vel = torch.zeros(2)
+        self.lin_vel, self.ang_vel = 0.0, 0.0
 
     def init_storage(self):
         self.storage = (
@@ -133,21 +139,33 @@ class LBC:
                 "pointgoal_with_gps_compass": rho_theta,
             }
 
-            actions = self.kin_nav_policy.act(kin_obs)
-            self.lin_vel, self.ang_vel = actions
-            self.lin_vel = (self.lin_vel + 1.0) / 2.0
+            lin_dist_raw, ang_dist_raw = self.kin_nav_policy.act(kin_obs)
+            lin_dist = (lin_dist_raw.item() + 1.0) / 2.0 * MAX_LIN_DIST
+            ang_dist = ang_dist_raw.item() * np.deg2rad(MAX_ANG_DIST)
+
+            # Locomotion policy runs at 50 Hz; thus, one nav timestep is equal to 1/50
+            # multiplied by the number of iterations we wait until polling the nav
+            # policy again (which is equal to NAV_INTERVAL).
+            # Formula: velocity = dist / time_step
+            self.lin_vel = lin_dist / (NAV_INTERVAL / 50.0)
+            self.ang_vel = ang_dist / (NAV_INTERVAL / 50.0)
+
             rt = rho_theta.cpu().numpy().tolist()
             rt[1] = np.rad2deg(rt[1])
-            print("rho_theta:", rt)
-            print(
-                "kin_actions",
-                self.lin_vel.item() * 0.25,
-                np.rad2deg(self.ang_vel.item() * np.deg2rad(30)),
-            )
+            if PRINT_RT:
+                print(
+                    f"rt: {rt[0]:.2f} {rt[1]:.2f}\tv: {self.lin_vel:.2f} "
+                    f"{np.rad2deg(self.ang_vel):.2f}\t"
+                    f"raw_act: {lin_dist_raw:.2f} {ang_dist_raw:.2f}"
+                )
+            if IM_SHOW:
+                img = np.uint8(level_depth.cpu().numpy() * 255)
+                cv2.imshow("", img)
+                cv2.waitKey(1)
         self.poll_count += 1
 
-        obs["proprioception"][0, 9] *= self.lin_vel.item() * 0.25
-        obs["proprioception"][0, 10] *= self.ang_vel.item() * np.deg2rad(30)
-        obs["proprioception"][0, 11] = 0  # no hor vel
+        obs["proprioception"][0, 9] *= self.lin_vel
+        obs["proprioception"][0, 10] = 0.0  # no hor vel
+        obs["proprioception"][0, 11] *= self.ang_vel
 
         return obs

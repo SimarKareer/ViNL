@@ -178,6 +178,7 @@ class LeggedRobotNav(LeggedRobot):
 
     def compute_observations(self):
         self.count += 1
+        # commands_scale seems to be tensor([2.0000, 2.0000, 0.2500])
         dummy_cmd = (
             torch.ones_like(self.commands[:, :3], device="cuda") * self.commands_scale
         )

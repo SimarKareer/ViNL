@@ -97,10 +97,6 @@ class Terrain:
                 self.cfg.vertical_scale,
                 self.cfg.slope_treshold,
             )
-            print(8927439287987243798432987234987234)
-            print(self.height_field_raw.shape)
-            print(self.cfg.horizontal_scale)
-            print(self.cfg.vertical_scale)
 
     def randomized_terrain(self):
         for k in range(self.cfg.num_sub_terrains):
