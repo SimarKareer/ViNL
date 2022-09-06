@@ -109,8 +109,14 @@ class Terrain:
             self.add_terrain_to_map(terrain, i, j)
 
     def curiculum(self):
-        for j in range(self.cfg.tot_cols):
-            for i in range(self.cfg.tot_rows):
+        num_cols = (
+            self.cfg.tot_cols if hasattr(self.cfg, "tot_cols") else self.cfg.num_cols
+        )
+        num_rows = (
+            self.cfg.tot_rows if hasattr(self.cfg, "tot_rows") else self.cfg.num_rows
+        )
+        for j in range(num_cols):
+            for i in range(num_rows):
                 difficulty = i / self.cfg.num_rows
                 choice = j / self.cfg.num_cols + 0.001
 
