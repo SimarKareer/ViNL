@@ -58,6 +58,8 @@ class LBC:
             print(f"Loading the navigation policy: {kin_nav_policy}")
             self.kin_nav_policy = NavPolicy(kin_nav_policy, device="cuda")
             self.kin_nav_policy.reset()
+        else:
+            self.kin_nav_policy = None
         self.poll_count = 0
         self.lin_vel, self.ang_vel = 0.0, 0.0
 
