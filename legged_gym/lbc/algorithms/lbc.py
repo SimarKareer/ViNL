@@ -8,11 +8,12 @@ from legged_gym.lbc.models.actor_encoder_lbc import Actor, VisionEncoder
 from rsl_rl.modules.actor_critic import DmEncoder
 from rsl_rl.modules.models.kin_policy import NavPolicy
 
-NAV_INTERVAL = 12
-MAX_LIN_DIST = 0.2
-MAX_ANG_DIST = 11.46
+NAV_INTERVAL = 25
+MAX_LIN_DIST = 0.5
+MAX_ANG_DIST = 30
 IM_SHOW = False
-PRINT_RT = False
+PRINT_RT = True
+MAX_DEPTH = 3.5
 
 
 class LBC:
@@ -135,7 +136,7 @@ class LBC:
         if (self.poll_count - 1) % NAV_INTERVAL == 0:
             rho_theta = torch.tensor(obs["rho_theta"], dtype=torch.float32)
             level_depth = obs["level_image"].squeeze(0)
-            level_depth = torch.clip(-level_depth, 0, 10.0) / 10.0
+            level_depth = torch.clip(-level_depth, 0, MAX_DEPTH) / MAX_DEPTH
             kin_obs = {
                 "depth": level_depth,
                 "pointgoal_with_gps_compass": rho_theta,

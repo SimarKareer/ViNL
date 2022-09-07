@@ -32,10 +32,11 @@ import cv2
 import numpy as np
 import quaternion
 import torch
-from isaacgym import gymapi, gymtorch
-from isaacgym.torch_utils import get_euler_xyz, quat_rotate_inverse
-from legged_gym.envs.base.legged_robot import LeggedRobot
+from isaacgym.torch_utils import quat_apply, quat_rotate_inverse
 from torchvision.utils import save_image
+
+from isaacgym import gymapi, gymtorch, gymutil
+from legged_gym.envs.base.legged_robot import LeggedRobot
 
 from .legged_robot_config import LeggedRobotCfg
 
@@ -64,8 +65,13 @@ class LeggedRobotNav(LeggedRobot):
         self, cfg: LeggedRobotCfg, sim_params, physics_engine, sim_device, headless
     ):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
-        self.goal_xy = np.array([13, 14])
-        # self.goal_xy = np.array([12, 20])
+        self.goal_xy = np.array([12.5, 20])
+        default_pose = gymapi.Transform()
+        default_pose.p.x, default_pose.p.y = 0.0, 0.0
+        default_pose.p.z = 0.0
+        self.sphere_geom = gymutil.WireframeSphereGeometry(
+            0.3, 20, 20, default_pose, color=(1, 0, 0)
+        )
 
     def reset(self):
         obs = super().reset()
@@ -81,10 +87,11 @@ class LeggedRobotNav(LeggedRobot):
         return self.root_states[0, :2].cpu().numpy()
 
     def get_rho_theta(self):
-        yaw = get_euler_xyz(self.root_states[:, 2:6])[-1][-1]
+        forward = quat_apply(self.base_quat, self.forward_vec)
+        yaw = torch.atan2(forward[:, 1], forward[:, 0])
         rho = np.linalg.norm(self.goal_xy - self.curr_xy)
         dx, dy = self.goal_xy - self.curr_xy
-        theta = wrap_heading(np.arctan2(dy, dx) - yaw.cpu().numpy())
+        theta = wrap_heading(np.arctan2(dy, dx) - yaw)
         return torch.tensor([rho, theta], device="cuda")
 
     def step(self, actions):
@@ -93,6 +100,17 @@ class LeggedRobotNav(LeggedRobot):
         Args:
             actions (torch.Tensor): Tensor of shape (num_envs, num_actions_per_env)
         """
+        default_pose = gymapi.Transform()
+        default_pose.p.x, default_pose.p.y = self.goal_xy
+        default_pose.p.z = 0.3
+        gymutil.draw_lines(
+            self.sphere_geom,
+            self.gym,
+            self.viewer,
+            self.envs[0],
+            default_pose,
+        )
+
         self.commands[0, :3] = torch.tensor([1.0, 0.0, 0.0], device="cuda")
         clip_actions = self.cfg.normalization.clip_actions
         self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
