@@ -99,9 +99,11 @@ class Terrain:
             ) = terrain_utils.convert_heightfield_to_trimesh(
                 self.height_field_raw,
                 self.cfg.horizontal_scale * 0.4,
-                self.cfg.vertical_scale * 2.5,
+                self.cfg.vertical_scale * 4,
                 self.cfg.slope_treshold,
             )
+            # Add small blocks on the ground
+            self.add_blocks()
 
     def randomized_terrain(self):
         for k in range(self.cfg.num_sub_terrains):
