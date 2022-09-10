@@ -1416,22 +1416,7 @@ class LeggedRobot(BaseTask):
         return rew_airTime
 
     def _reward_feet_obs_contact(self):
-        _rb_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
-        rb_states = gymtorch.wrap_tensor(_rb_states)
-        feet_heights = rb_states[self.global_feet_indices, 2]
-
-        contact = torch.logical_or(
-            self.contact_forces[:, self.feet_indices, 2] > 1.0,
-            self.contact_forces[:, self.feet_indices, 1] > 1.0,
-        )
-        contact = torch.logical_or(
-            contact, self.contact_forces[:, self.feet_indices, 0] > 1.0
-        )
-        self.last_contacts = contact
-        contact_feet_heights = feet_heights[contact.view(-1)]
-        penalty = torch.mean((contact_feet_heights > 0.2).float())
-
-        return -penalty
+        raise RuntimeError("This code should not run!")
 
     def _reward_feet_stumble(self):
         # Penalize feet hitting vertical surfaces
