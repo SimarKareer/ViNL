@@ -1399,14 +1399,6 @@ class LeggedRobot(BaseTask):
         return torch.exp(-ang_vel_error / self.cfg.rewards.tracking_sigma)
 
     def _reward_feet_air_time(self):
-        # _rb_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
-        # rb_states = gymtorch.wrap_tensor(_rb_states)
-
-        # print("RB_states shape: ", rb_states.shape)
-        # print("Z vals: ", rb_states[0:17, 2])
-
-        # quit()
-
         # Reward long steps
         # Need to filter the contacts because the contact reporting of PhysX is unreliable on meshes
         contact = self.contact_forces[:, self.feet_indices, 2] > 1.0
@@ -1426,11 +1418,7 @@ class LeggedRobot(BaseTask):
     def _reward_feet_obs_contact(self):
         _rb_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
         rb_states = gymtorch.wrap_tensor(_rb_states)
-        # print("rb shape: ", rb_states.shape)
-        # print("feet_ind shape: ", self.global_feet_indices.shape)
         feet_heights = rb_states[self.global_feet_indices, 2]
-        # print("all heights: ", rb_states[:, 2])
-        # print("feet_heights: ", feet_heights)
 
         contact = torch.logical_or(
             self.contact_forces[:, self.feet_indices, 2] > 1.0,
@@ -1439,20 +1427,11 @@ class LeggedRobot(BaseTask):
         contact = torch.logical_or(
             contact, self.contact_forces[:, self.feet_indices, 0] > 1.0
         )
-        contact_filt = torch.logical_or(contact, self.last_contacts)
         self.last_contacts = contact
-
-        # print("feet heights", feet_heights.shape)
-        # print("contact_filt: ", contact_filt.shape)
         contact_feet_heights = feet_heights[contact.view(-1)]
-        # print("contact_feet_heights: ", contact_feet_heights)
-        # penalty = torch.mean((contact_feet_heights > 0.05).float())
         penalty = torch.mean((contact_feet_heights > 0.2).float())
-        # quit()
-        return -penalty
-        # contact_feet_height =
 
-        # penalty = torch.sum(contact_feet_height)
+        return -penalty
 
     def _reward_feet_stumble(self):
         # Penalize feet hitting vertical surfaces
@@ -1490,63 +1469,12 @@ class LeggedRobot(BaseTask):
             contact, self.contact_forces[:, self.feet_indices, 0] > 1.0
         )
 
-        contact_filt = torch.logical_or(contact, self.last_contacts).view(-1)
         self.last_contacts = contact
-        # print("contact filt shape: ", contact_filt.shape)
-
-        # if self.num_calls == 10:
-        #     import matplotlib.pyplot as plt
-        #     plt.hist(feet_heights.cpu().detach().numpy(), range=(-1, 1), bins=50)
-        #     plt.savefig("feet_heights.png")
-        #     plt.clf()
-
-        #     print("filtered: ", len(feet_heights), len(feet_heights[contact_filt]), len(feet_heights) - len(feet_heights[contact_filt]))
-        #     plt.hist(feet_heights[contact_filt].cpu().detach().numpy(), range=(-1, 1), bins=50)
-        #     plt.savefig("paper_contact_feet_heights.png")
-        #     plt.clf()
-        #     print("minmax", max(feet_heights[contact_filt]), min(feet_heights[contact_filt]))
-
-        # plt.hist(z_forces.cpu().detach().numpy(), bins=50)
-        # plt.savefig("z_forces.png")
-        # plt.clf()
-
-        # plt.hist(z_forces[feet_heights > 0.1].cpu().detach().numpy(), bins=50)
-        # plt.savefig("z_forces_high_feet.png")
-        # plt.clf()
-        # exit()
-
-        # if self.num_calls == 10:
-        #     import matplotlib.pyplot as plt
-        #     plt.hist(feet_heights.cpu().detach().numpy(), range=(-1, 1), bins=50)
-        #     plt.savefig("feet_heights.png")
-        #     plt.clf()
-
-        #     plt.hist(feet_heights[z_forces > 10].cpu().detach().numpy(), range=(-1, 1), bins=50)
-        #     plt.savefig("contact_feet_heights.png")
-        #     plt.clf()
-
-        #     plt.hist(z_forces.cpu().detach().numpy(), bins=50)
-        #     plt.savefig("z_forces.png")
-        #     plt.clf()
-
-        #     plt.hist(z_forces[feet_heights > 0.1].cpu().detach().numpy(), bins=50)
-        #     plt.savefig("z_forces_high_feet.png")
-        #     plt.clf()
-        #     exit()
-
-        # print("high feet contacts: ", torch.sum(torch.logical_and(feet_heights > 0.1, z_forces > 50)))
-        # print("low feet contacts: ", torch.sum(torch.logical_and(feet_heights < 0.0, z_forces > 50)))
-
         xy_forces[feet_heights < 0.05] = 0
-        xy_ans = xy_forces.view(-1, 4).sum(dim=1)
-
-        # print("lowest contacting foot: ", feet_heights[z_forces > 1].min())
-        # print("highest contacting foot: ", feet_heights[z_forces > 50.0].max())
         z_forces[feet_heights < 0.05] = 0
         z_ans = z_forces.view(-1, 4).sum(dim=1)
         z_ans[z_ans > 1] = 1
 
-        # ans = torch.ones(1024).cuda()
         return z_ans
 
     def _reward_stand_still(self):
