@@ -91,7 +91,7 @@ class AliengoNavCfg(LeggedRobotCfg):
         file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/aliengo/urdf/aliengo.urdf"
         foot_name = "foot"
         penalize_contacts_on = ["thigh", "calf"]
-        terminate_after_contacts_on = ["base", "trunk", "hip"]
+        terminate_after_contacts_on = []
         self_collisions = 1  # 1 to disable, 0 to enable...bitwise filter
 
     class domain_rand(LeggedRobotCfg.domain_rand):
@@ -144,6 +144,7 @@ class AliengoNavCfgAlg(LeggedRobotCfgPPO):
 
         teacher_policy = "weights/obs_aliengo_Sep06_14-25-01_ObsEncDM_model_4500.pt"
         kin_nav_policy = "weights/VISUAL_LOCOMOTION_aliengo_kinematic_habitat_camera_up_2hz_57deg_camera_noise_sd_2_ckpt.88.pth"
+        # kin_nav_policy = "weights/VISUAL_LOCOMOTION_aliengo_kinematic_habitat_camera_up_2hz_15deg_camera_noise_sd_2_ckpt.96.pth"
         # kin_nav_policy = "weights/VISUAL_LOCOMOTION_aliengo_kinematic_habitat_camera_up_2hz_57deg_camera_noise_sd_1_ckpt.2.pth"
 
     class lbc(LeggedRobotCfgPPO.lbc):

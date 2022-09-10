@@ -13,7 +13,7 @@ MAX_LIN_DIST = 0.5
 MAX_ANG_DIST = 30
 IM_SHOW = False
 PRINT_RT = True
-MAX_DEPTH = 3.5
+MAX_DEPTH = 10.0
 
 
 class LBC:
@@ -136,7 +136,7 @@ class LBC:
         if (self.poll_count - 1) % NAV_INTERVAL == 0:
             rho_theta = torch.tensor(obs["rho_theta"], dtype=torch.float32)
             level_depth = obs["level_image"].squeeze(0)
-            level_depth = torch.clip(-level_depth, 0, MAX_DEPTH) / MAX_DEPTH
+            level_depth = torch.clamp(-level_depth, 0, MAX_DEPTH) / MAX_DEPTH
             kin_obs = {
                 "depth": level_depth,
                 "pointgoal_with_gps_compass": rho_theta,

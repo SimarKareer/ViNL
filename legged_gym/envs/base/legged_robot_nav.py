@@ -65,21 +65,52 @@ class LeggedRobotNav(LeggedRobot):
         self, cfg: LeggedRobotCfg, sim_params, physics_engine, sim_device, headless
     ):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
-        self.goal_xy = np.array([12.5, 20])
+        self.start_pos = np.array([9, 9]) - 20
+        self.goal_xy = np.array([16, 16]) - 20
         default_pose = gymapi.Transform()
         default_pose.p.x, default_pose.p.y = 0.0, 0.0
         default_pose.p.z = 0.0
-        self.sphere_geom = gymutil.WireframeSphereGeometry(
-            0.3, 20, 20, default_pose, color=(1, 0, 0)
+        self.start_sphere_geom = gymutil.WireframeSphereGeometry(
+            0.15, 20, 20, default_pose, color=(0, 1, 0)
+        )
+        self.goal_sphere_geom = gymutil.WireframeSphereGeometry(
+            0.15, 20, 20, default_pose, color=(1, 0, 0)
         )
 
     def reset(self):
         obs = super().reset()
-        start_pos = [12, 15]
-        self.root_states[0, :2] = torch.tensor(start_pos, device="cuda")
+        self.root_states[0, :2] = torch.tensor(self.start_pos, device="cuda")
         self.gym.set_actor_root_state_tensor(
             self.sim, gymtorch.unwrap_tensor(self.root_states)
         )
+        self.gym.set_light_parameters(
+            self.sim,
+            0,
+            gymapi.Vec3(0, 0, 0),
+            gymapi.Vec3(0, 0, 0),
+            gymapi.Vec3(0, 0, 0),
+        )
+        self.gym.set_light_parameters(
+            self.sim,
+            1,
+            gymapi.Vec3(1, 1, 1),
+            gymapi.Vec3(1, 1, 1),
+            gymapi.Vec3(0, 0, 1),
+        )
+        default_pose = gymapi.Transform()
+        for pose, geom in zip(
+            [self.start_pos, self.goal_xy],
+            [self.start_sphere_geom, self.goal_sphere_geom],
+        ):
+            default_pose.p.x, default_pose.p.y = pose
+            gymutil.draw_lines(
+                geom,
+                self.gym,
+                self.viewer,
+                self.envs[0],
+                default_pose,
+            )
+
         return obs
 
     @property
@@ -100,17 +131,6 @@ class LeggedRobotNav(LeggedRobot):
         Args:
             actions (torch.Tensor): Tensor of shape (num_envs, num_actions_per_env)
         """
-        default_pose = gymapi.Transform()
-        default_pose.p.x, default_pose.p.y = self.goal_xy
-        default_pose.p.z = 0.3
-        gymutil.draw_lines(
-            self.sphere_geom,
-            self.gym,
-            self.viewer,
-            self.envs[0],
-            default_pose,
-        )
-
         self.commands[0, :3] = torch.tensor([1.0, 0.0, 0.0], device="cuda")
         clip_actions = self.cfg.normalization.clip_actions
         self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)

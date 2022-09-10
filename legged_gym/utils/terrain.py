@@ -96,8 +96,8 @@ class Terrain:
                 self.triangles,
             ) = terrain_utils.convert_heightfield_to_trimesh(
                 self.height_field_raw,
-                self.cfg.horizontal_scale,
-                self.cfg.vertical_scale,
+                self.cfg.horizontal_scale * 0.4,
+                self.cfg.vertical_scale * 2.5,
                 self.cfg.slope_treshold,
             )
 
