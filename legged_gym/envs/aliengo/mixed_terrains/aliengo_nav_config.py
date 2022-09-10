@@ -49,6 +49,7 @@ class AliengoNavCfg(LeggedRobotCfg):
         camera_type = "d"  # rgb
         num_privileged_obs = None  # 187
         train_type = "lbc"  # standard, priv, lbc
+        episode_length_s = 125  # episode length in seconds
 
     class terrain(LeggedRobotCfg.terrain):
         # terrain_proportions = [0.1, 0.1, 0.2, 0.2, 0.2, 0.2]
@@ -142,7 +143,7 @@ class AliengoNavCfgAlg(LeggedRobotCfgPPO):
         resume_path = "weights/lbc_aliengo_Sep06_17-41-25_debug_model_20000.pt"
 
         teacher_policy = "weights/obs_aliengo_Sep06_14-25-01_ObsEncDM_model_4500.pt"
-        kin_nav_policy = "weights/VISUAL_LOCOMOTION_aliengo_kinematic_habitat_camera_up_2hz_15deg_camera_noise_sd_1_ckpt.2.pth"
+        kin_nav_policy = "weights/VISUAL_LOCOMOTION_aliengo_kinematic_habitat_camera_up_2hz_57deg_camera_noise_sd_2_ckpt.88.pth"
         # kin_nav_policy = "weights/VISUAL_LOCOMOTION_aliengo_kinematic_habitat_camera_up_2hz_57deg_camera_noise_sd_1_ckpt.2.pth"
 
     class lbc(LeggedRobotCfgPPO.lbc):
