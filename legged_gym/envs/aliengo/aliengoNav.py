@@ -40,10 +40,11 @@ from .mixed_terrains.aliengo_rough_config import AliengoRoughCfg
 class AliengoNav(LeggedRobotNav):
     cfg: AliengoRoughCfg
 
-    def make_handle_trans(self, cfg, angle, env_num):
+    def make_handle_trans(self, cfg, angle, env_num, hfov=None):
         camera_props = gymapi.CameraProperties()
-        # print("FOV: ", camera_props.horizontal_fov)
-        # camera_props.horizontal_fov = 75.0
+        if hfov is not None:
+            camera_props.horizontal_fov = hfov
+        print("FOV: ", camera_props.horizontal_fov)
         # 1280 x 720
         width, height = cfg.env.camera_res
         camera_props.width = width
@@ -75,7 +76,7 @@ class AliengoNav(LeggedRobotNav):
             for i in range(self.num_envs):
 
                 cam1, trans1 = self.make_handle_trans(cfg, np.deg2rad(30), i)
-                cam2, trans2 = self.make_handle_trans(cfg, 0.0, i)
+                cam2, trans2 = self.make_handle_trans(cfg, 0.0, i, hfov=70)
                 
                 self.camera_handles.append(cam1)
                 self.camera_handles.append(cam2)
