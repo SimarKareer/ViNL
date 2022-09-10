@@ -42,6 +42,7 @@ from .legged_robot_config import LeggedRobotCfg
 
 SHOW = False
 PRINT_RT = False
+SUCCESS_RADIUS = 0.3235
 
 
 def wrap_heading(heading):
@@ -76,6 +77,7 @@ class LeggedRobotNav(LeggedRobot):
         self.goal_sphere_geom = gymutil.WireframeSphereGeometry(
             0.15, 20, 20, default_pose, color=(1, 0, 0)
         )
+        self.success = False
 
     def reset(self):
         obs = super().reset()
@@ -110,6 +112,7 @@ class LeggedRobotNav(LeggedRobot):
                 self.envs[0],
                 default_pose,
             )
+        self.success = False
 
         return obs
 
@@ -156,6 +159,10 @@ class LeggedRobotNav(LeggedRobot):
             self.privileged_obs_buf = torch.clip(
                 self.privileged_obs_buf, -clip_obs, clip_obs
             )
+
+        if self.obs_buf["rho_theta"][0] <= SUCCESS_RADIUS:
+            self.success = True
+
         return (
             self.obs_buf,
             self.privileged_obs_buf,
@@ -163,6 +170,12 @@ class LeggedRobotNav(LeggedRobot):
             self.reset_buf,
             self.extras,
         )
+
+    def check_termination(self):
+        super().check_termination()
+        if self.success:
+            self.reset_buf[0] = True
+            self.success = False
 
     def post_physics_step(self):
         """check terminations, compute observations and rewards
