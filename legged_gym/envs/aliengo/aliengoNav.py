@@ -76,7 +76,7 @@ class AliengoNav(LeggedRobotNav):
             for i in range(self.num_envs):
 
                 cam1, trans1 = self.make_handle_trans(cfg, np.deg2rad(30), i)
-                cam2, trans2 = self.make_handle_trans(cfg, 0.0, i, hfov=70)
+                cam2, trans2 = self.make_handle_trans(cfg, np.deg2rad(-15), i, hfov=70)
                 
                 self.camera_handles.append(cam1)
                 self.camera_handles.append(cam2)

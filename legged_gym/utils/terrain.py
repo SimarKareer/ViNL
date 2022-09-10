@@ -27,6 +27,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
+import time
+from itertools import permutations
 
 import imageio
 import numpy as np
@@ -244,6 +246,67 @@ class Terrain:
             np.max(terrain.height_field_raw[x1:x2, y1:y2]) * terrain.vertical_scale
         )
         self.env_origins[i, j] = [env_origin_x, env_origin_y, env_origin_z]
+
+    def add_blocks(self):
+        BLOCKS_PER_AREA = 1.0
+        BLOCK_HEIGHT = 0.1
+        DIST_THRESH = 1.0
+        POTENTIAL_DIMS = [(0.15, 0.15), (0.15, 0.3), (0.3, 0.15)]
+
+        x0 = np.amin([i[0] for i in self.vertices if i[2] > 0.1])
+        x1 = np.amax([i[0] for i in self.vertices if i[2] > 0.1])
+        y0 = np.amin([i[1] for i in self.vertices if i[2] > 0.1])
+        y1 = np.amax([i[1] for i in self.vertices if i[2] > 0.1])
+
+        area = (x1 - x0) * (y1 - y0)
+        num_blocks = int(area * BLOCKS_PER_AREA)
+        # A block is an x, y, s1, s2, and h
+        blocks = []
+        np.random.seed(int(time.time()))
+        for idx in range(num_blocks):
+            success = False
+            while not success:
+                s1, s2 = POTENTIAL_DIMS[np.random.randint(3)]
+                x = np.random.rand() * (x1 - x0) + x0
+                y = np.random.rand() * (y1 - y0) + y0
+                if np.linalg.norm(np.array([x, y]) - np.array([x0, y0])) < 3:
+                    continue
+                new_block = (x, y, s1, s2, BLOCK_HEIGHT)
+                if blocks:
+                    blocks_arr = np.array(blocks)
+                    new_block_arr = np.array(new_block)
+                    diff = blocks_arr - new_block_arr
+                    if min(min(diff[:, 0]), min(diff[:, 1])) > DIST_THRESH:
+                        continue
+                blocks.append(new_block)
+                success = True
+
+        for block in blocks:
+            self.add_block(*block)
+
+    def add_block(self, x0, y0, s1, s2, h):
+        # A rectangular prism has 8 vertices
+        new_vertices = [
+            (x0, y0, 0.0),
+            (x0 + s1, y0, 0.0),
+            (x0, y0 + s2, 0.0),
+            (x0 + s1, y0 + s2, 0.0),
+            (x0, y0, h),
+            (x0 + s1, y0, h),
+            (x0, y0 + s2, h),
+            (x0 + s1, y0 + s2, h),
+        ]
+        # Spam every possible combination
+        new_triangles = list(permutations(range(8), 3))
+        self.triangles = np.concatenate(
+            [
+                self.triangles,
+                np.array(new_triangles, dtype=np.uint32) + self.vertices.shape[0],
+            ]
+        )
+        self.vertices = np.concatenate(
+            [self.vertices, np.array(new_vertices, dtype=np.float32)]
+        )
 
 
 def gap_terrain(terrain, gap_size, platform_size=1.0):
