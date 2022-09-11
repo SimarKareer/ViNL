@@ -1,3 +1,5 @@
+import time
+
 import cv2
 import numpy as np
 import torch
@@ -14,6 +16,7 @@ MAX_ANG_DIST = 30
 IM_SHOW = False
 PRINT_RT = True
 MAX_DEPTH = 10.0
+SAVE_IMG = False
 
 
 class LBC:
@@ -165,6 +168,12 @@ class LBC:
                 img = np.uint8(level_depth.cpu().numpy() * 255)
                 cv2.imshow("", img)
                 cv2.waitKey(1)
+            if SAVE_IMG:
+                img1 = np.uint8(level_depth.cpu().numpy() * 255)
+                img2 = obs["tilted_image"].squeeze(0)
+                img2 = torch.clamp(-img2, 0, 10.0) / 10.0
+                img2 = np.uint8(img2.cpu().numpy() * 255)
+                cv2.imwrite(f"images/{time.time()}.png", np.hstack([img1, img2]))
         self.poll_count += 1
 
         obs["proprioception"][0, 9] *= self.lin_vel
