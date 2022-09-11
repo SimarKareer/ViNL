@@ -31,6 +31,7 @@
 import os
 from typing import Dict
 
+import cv2
 import torch
 from isaacgym.torch_utils import *
 from torchvision.utils import save_image
@@ -43,6 +44,11 @@ from legged_gym.utils.math import quat_apply_yaw, wrap_to_pi
 from legged_gym.utils.terrain import Terrain
 
 from .legged_robot_config import LeggedRobotCfg
+import time
+
+
+SAVE_IMG = False
+MAX_DEPTH = 10
 
 
 class LeggedRobot(BaseTask):
@@ -275,17 +281,6 @@ class LeggedRobot(BaseTask):
 
     def compute_observations(self):
         """Computes observations"""
-        # print("lin vel shape: ", (self.base_lin_vel * self.obs_scales.lin_vel).shape)
-        # print("ang vel shape: ", (self.base_ang_vel * self.obs_scales.ang_vel).shape)
-        # print("gravity shape: ", (self.projected_gravity).shape)
-        # print("commands shape: ", (self.commands[:, :3] * self.commands_scale).shape)
-        # print(
-        #     "dof pos shape: ",
-        #     ((self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos).shape,
-        # )
-        # print("dof vel shape: ", (self.dof_vel * self.obs_scales.dof_vel).shape)
-        # print("actions shape: ", (self.actions).shape)
-        # exit()
         self.obs_buf = torch.cat(
             (
                 self.base_lin_vel * self.obs_scales.lin_vel,
@@ -300,7 +295,6 @@ class LeggedRobot(BaseTask):
         )
         # add perceptive inputs if not blind
         heights = None
-        # print(self.measured_heights.shape)
         if self.cfg.terrain.measure_heights:
             heights = (
                 torch.clip(
@@ -313,16 +307,8 @@ class LeggedRobot(BaseTask):
 
         if heights is not None:
             self.obs_buf = torch.cat((self.obs_buf, heights), dim=-1)
-        # if self.cfg.env.train_type == "standard":
-        #     if heights is not None:
-        #         self.obs_buf = torch.cat((self.obs_buf, heights), dim=-1)
-        # elif self.cfg.env.train_type == "priv" or self.cfg.env.train_type == "lbc":
-        #     self.obs_buf = torch.cat((self.obs_buf, heights), dim=-1)
-        #     self.depth_buf = heights
 
         self.count += 1
-        # if self.count == 10:
-        #     exit()
         if self.cfg.env.train_type == "lbc":
 
             width, height = self.cfg.env.camera_res
@@ -334,17 +320,14 @@ class LeggedRobot(BaseTask):
             for i in range(self.num_envs):
                 if self.cfg.env.camera_type == "rgb":
                     im = self.gym.get_camera_image_gpu_tensor(
-                        self.sim,  # self.depth_buf,
-                        # self.image_buf,
+                        self.sim,
                         self.camera_handles[i],
                         gymapi.IMAGE_COLOR,
                     )
                     im = gymtorch.wrap_tensor(im)
-                    # image_buf[i] = im
 
                     if self.cfg.env.save_im:
                         trans_im = im.detach().clone()
-                        # print("image size: ", trans_im.shape)
                         trans_im = (trans_im[..., :3]).float() / 255
                         save_image(
                             trans_im.view((height, width, 3)).permute(2, 0, 1).float(),
@@ -358,23 +341,21 @@ class LeggedRobot(BaseTask):
                         gymapi.IMAGE_DEPTH,
                     )
                     im = gymtorch.wrap_tensor(im)
-                    # print(im)
                     image_buf[i] = im
-                    # print("im shape: ", im.shape)
 
                     if self.cfg.env.save_im:
                         trans_im = im.detach().clone()
-                        # print(trans_im)
                         trans_im = -1 / trans_im
                         trans_im = trans_im / torch.max(trans_im)
-                        # print("transformed im", trans_im)
-                        # print("image size: ", trans_im.shape)
                         save_image(
                             trans_im.view((height, width, 1)).permute(2, 0, 1).float(),
                             f"images/dim/{i}_{self.count}.png",
                         )
-                        # if self.count == 500:
-                        #     exit()
+
+                    if SAVE_IMG:
+                        img = torch.clamp(-im, 0, MAX_DEPTH) / MAX_DEPTH
+                        img = np.uint8(img.cpu().numpy() * 255)
+                        cv2.imwrite(f"images/{time.time()}.png", img)
 
             self.gym.end_access_image_tensors(self.sim)
             self.obs_buf = torch.cat(
