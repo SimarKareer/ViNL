@@ -27,6 +27,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
+from collections import defaultdict
 
 import cv2
 import numpy as np
@@ -110,10 +111,21 @@ class LeggedRobotNav(LeggedRobot):
                 default_pose,
             )
         self.success = False
+        self.eval_metrics = defaultdict(float)
+        self.prev_xy = self.start_pos
+        self.num_steps = 0
+        self.feet_collided = False
 
     def reset_idx(self, env_ids):
         if torch.numel(env_ids) == 0:
             return
+        if self.num_steps > 0:
+            self.eval_metrics["feet_collisions_per_meter"] = (
+                self.eval_metrics["feet_collisions"]
+                / self.eval_metrics["dist_traveled"]
+            )
+            for k, v in self.eval_metrics.items():
+                print(f"{k}: {v:.3f}")
         self.num_steps = 0
         super().reset_idx(env_ids)
         self.success = False
@@ -178,7 +190,12 @@ class LeggedRobotNav(LeggedRobot):
             if self.device == "cpu":
                 self.gym.fetch_results(self.sim, True)
             self.gym.refresh_dof_state_tensor(self.sim)
+
+        # Rewards are calculated here in the post_physics_step.
+        self.feet_collided = False
         self.post_physics_step()
+        if self.feet_collided:
+            self.eval_metrics["feet_collisions"] += 1
 
         # return clipped obs, clipped states (None), rewards, dones and infos
         clip_obs = self.cfg.normalization.clip_observations
@@ -192,6 +209,12 @@ class LeggedRobotNav(LeggedRobot):
 
         if self.obs_buf["rho_theta"][0] <= SUCCESS_RADIUS:
             self.success = True
+
+        self.eval_metrics["dist_traveled"] += np.linalg.norm(
+            self.curr_xy - self.prev_xy
+        )
+        self.prev_xy = self.curr_xy
+
         self.num_steps += 1
 
         return (
@@ -324,14 +347,14 @@ class LeggedRobotNav(LeggedRobot):
         self.gym.end_access_image_tensors(self.sim)
         tilted_image, level_image = images
 
-        if self.cfg.env.save_im:
-            width, height = self.cfg.env.camera_res
-            path = f"images/dim/{i}_{self.count}_down.png"
-            self.save_im(images[0], path, height, width)
-            path = f"images/dim/{i}_{self.count}_up.png"
-            self.save_im(images[1], path, height, width)
-
-            if self.count == 50:
-                exit()
-
         return level_image, tilted_image
+
+    def _reward_feet_stumble(self):
+        rew = super()._reward_feet_stumble()
+        self.feet_collided = rew[0].item() or self.feet_collided
+        return rew
+
+    def _reward_feet_step(self):
+        rew = super()._reward_feet_step()
+        self.feet_collided = rew[0].item() or self.feet_collided
+        return rew
