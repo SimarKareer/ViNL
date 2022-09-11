@@ -71,19 +71,11 @@ class LeggedRobotNav(LeggedRobot):
         default_pose = gymapi.Transform()
         default_pose.p.x, default_pose.p.y = 0.0, 0.0
         default_pose.p.z = 0.0
-        self.start_sphere_geom = gymutil.WireframeSphereGeometry(
+        start_sphere_geom = gymutil.WireframeSphereGeometry(
             0.15, 20, 20, default_pose, color=(0, 1, 0)
         )
-        self.goal_sphere_geom = gymutil.WireframeSphereGeometry(
+        goal_sphere_geom = gymutil.WireframeSphereGeometry(
             0.15, 20, 20, default_pose, color=(1, 0, 0)
-        )
-        self.success = False
-
-    def reset(self):
-        obs = super().reset()
-        self.root_states[0, :2] = torch.tensor(self.start_pos, device="cuda")
-        self.gym.set_actor_root_state_tensor(
-            self.sim, gymtorch.unwrap_tensor(self.root_states)
         )
         self.gym.set_light_parameters(
             self.sim,
@@ -102,7 +94,7 @@ class LeggedRobotNav(LeggedRobot):
         default_pose = gymapi.Transform()
         for pose, geom in zip(
             [self.start_pos, self.goal_xy],
-            [self.start_sphere_geom, self.goal_sphere_geom],
+            [start_sphere_geom, goal_sphere_geom],
         ):
             default_pose.p.x, default_pose.p.y = pose
             gymutil.draw_lines(
@@ -112,6 +104,14 @@ class LeggedRobotNav(LeggedRobot):
                 self.envs[0],
                 default_pose,
             )
+        self.success = False
+
+    def reset(self):
+        obs = super().reset()
+        self.root_states[0, :2] = torch.tensor(self.start_pos, device="cuda")
+        self.gym.set_actor_root_state_tensor(
+            self.sim, gymtorch.unwrap_tensor(self.root_states)
+        )
         self.success = False
 
         return obs
