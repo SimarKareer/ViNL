@@ -64,6 +64,7 @@ class LbcRunner:
         self.current_learning_iteration = 0
 
         self.env.reset()
+        self.latest_mean_rew = 1234321
 
     def learn(self, num_learning_iterations, init_at_random_ep_len=False):
         # initialize writer
@@ -140,13 +141,20 @@ class LbcRunner:
 
             batch_loss = 0
             if it % self.save_interval == 0:
-                self.save(os.path.join(self.log_dir, "model_{}.pt".format(it)))
+                self.save(
+                    os.path.join(
+                        self.log_dir,
+                        f"model_{it}"
+                        f"_{self.latest_mean_rew}.pt",
+                    )
+                )
             ep_infos.clear()
 
         self.current_learning_iteration += num_learning_iterations
         self.save(
             os.path.join(
-                self.log_dir, "model_{}.pt".format(self.current_learning_iteration)
+                self.log_dir,
+                f"model_{self.current_learning_iteration}_{self.latest_mean_rew}.pt",
             )
         )
 
@@ -213,6 +221,7 @@ class LbcRunner:
                 f"""{'Mean episode length:':>{pad}} {statistics.mean(locs['lenbuffer']):.2f}\n"""
                 f"""{'LBC Loss:':>{pad}} {locs['batch_loss']:.2f}\n"""
             )
+            self.latest_mean_rew = statistics.mean(locs['rewbuffer'])
         else:
             log_string = (
                 f"""{'#' * width}\n"""
