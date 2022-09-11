@@ -32,7 +32,12 @@ import cv2
 import numpy as np
 import quaternion
 import torch
-from isaacgym.torch_utils import quat_apply, quat_rotate_inverse, get_euler_xyz
+from isaacgym.torch_utils import (
+    get_euler_xyz,
+    quat_apply,
+    quat_rotate_inverse,
+    torch_rand_float,
+)
 from torchvision.utils import save_image
 
 from isaacgym import gymapi, gymtorch, gymutil
@@ -106,15 +111,36 @@ class LeggedRobotNav(LeggedRobot):
             )
         self.success = False
 
-    def reset(self):
-        obs = super().reset()
-        self.root_states[0, :2] = torch.tensor(self.start_pos, device="cuda")
-        self.gym.set_actor_root_state_tensor(
-            self.sim, gymtorch.unwrap_tensor(self.root_states)
-        )
+    def reset_idx(self, env_ids):
+        super().reset_idx(env_ids)
         self.success = False
+        self.eval_metrics = defaultdict(float)
+        self.prev_xy = self.start_pos
 
-        return obs
+    def _reset_root_states(self, env_ids):
+        """Resets ROOT states position and velocities of selected environmments
+            Sets base position based on the curriculum
+            Selects randomized base velocities within -0.5:0.5 [m/s, rad/s]
+        Args:
+            env_ids (List[int]): Environemnt ids
+        """
+        # base position
+        self.root_states[env_ids] = self.base_init_state
+        self.root_states[env_ids, :3] += self.env_origins[env_ids]
+        self.root_states[0, :2] = torch.tensor(
+            self.start_pos, device="cuda", dtype=torch.float32
+        )
+        # base velocities; start at 0-ish for nav
+        self.root_states[env_ids, 7:13] = torch_rand_float(
+            -0.000001, 0.00001, (len(env_ids), 6), device=self.device
+        )  # [7:10]: lin vel, [10:13]: ang vel
+        env_ids_int32 = env_ids.to(dtype=torch.int32)
+        self.gym.set_actor_root_state_tensor_indexed(
+            self.sim,
+            gymtorch.unwrap_tensor(self.root_states),
+            gymtorch.unwrap_tensor(env_ids_int32),
+            len(env_ids_int32),
+        )
 
     @property
     def curr_xy(self):
@@ -181,7 +207,7 @@ class LeggedRobotNav(LeggedRobot):
         # NOTE: Not actually quit sure if roll and pitch be flipped
         _, roll, pitch = get_euler_xyz(q)
         roll, pitch = wrap_heading(roll), wrap_heading(pitch)
-        if (max(abs(roll), abs(pitch))) > np.pi/2:
+        if (max(abs(roll), abs(pitch))) > np.deg2rad(120):
             self.reset_buf[0] = True
 
     def post_physics_step(self):
