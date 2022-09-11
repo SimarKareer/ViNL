@@ -112,6 +112,9 @@ class LeggedRobotNav(LeggedRobot):
         self.success = False
 
     def reset_idx(self, env_ids):
+        if torch.numel(env_ids) == 0:
+            return
+        self.num_steps = 0
         super().reset_idx(env_ids)
         self.success = False
         self.eval_metrics = defaultdict(float)
@@ -180,7 +183,8 @@ class LeggedRobotNav(LeggedRobot):
         # return clipped obs, clipped states (None), rewards, dones and infos
         clip_obs = self.cfg.normalization.clip_observations
         for k, v in self.obs_buf.items():
-            self.obs_buf[k] = torch.clip(v, -clip_obs, clip_obs)
+            if not isinstance(v, bool):
+                self.obs_buf[k] = torch.clip(v, -clip_obs, clip_obs)
         if self.privileged_obs_buf is not None:
             self.privileged_obs_buf = torch.clip(
                 self.privileged_obs_buf, -clip_obs, clip_obs
@@ -188,6 +192,7 @@ class LeggedRobotNav(LeggedRobot):
 
         if self.obs_buf["rho_theta"][0] <= SUCCESS_RADIUS:
             self.success = True
+        self.num_steps += 1
 
         return (
             self.obs_buf,
@@ -285,6 +290,7 @@ class LeggedRobotNav(LeggedRobot):
             "level_image": level_image,
             "tilted_image": tilted_image,
             "rho_theta": rho_theta,
+            "reset": self.num_steps == 0,
         }
         if PRINT_RT:
             rt = rho_theta.cpu().numpy().tolist()

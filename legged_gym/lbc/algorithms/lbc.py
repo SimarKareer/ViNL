@@ -136,7 +136,15 @@ class LBC:
         return actions
 
     def update_cmds(self, obs):
-        if (self.poll_count - 1) % NAV_INTERVAL == 0:
+        if obs["reset"]:
+            print("!!!!!POLICY IS GETTING RESET!!!!!")
+            self.poll_count = 0
+            self.kin_nav_policy.reset()
+            if self.vision_encoder.encoder.hidden_state is not None:
+                self.vision_encoder.encoder.hidden_state = torch.zeros_like(
+                    self.vision_encoder.encoder.hidden_state
+                )
+        if self.poll_count % NAV_INTERVAL == 0:
             rho_theta = torch.tensor(obs["rho_theta"], dtype=torch.float32)
             level_depth = obs["level_image"].squeeze(0)
             level_depth = torch.clamp(-level_depth, 0, MAX_DEPTH) / MAX_DEPTH
