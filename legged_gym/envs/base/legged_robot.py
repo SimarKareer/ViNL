@@ -95,6 +95,7 @@ class LeggedRobot(BaseTask):
                 all_indices[all_indices % 17 == 16],
             ]
         )
+        self.first_iter = True
 
     def step(self, actions):
         """Apply actions, simulate, call self.post_physics_step()
@@ -358,8 +359,17 @@ class LeggedRobot(BaseTask):
                         cv2.imwrite(f"images/{time.time()}.png", img)
 
             self.gym.end_access_image_tensors(self.sim)
+            not_done = torch.logical_not(self.reset_buf)
+            if self.first_iter:
+                not_done = torch.zeros_like(not_done)
+                self.first_iter = False
             self.obs_buf = torch.cat(
-                (self.obs_buf, image_buf.view(self.cfg.env.num_envs, -1)), dim=-1
+                (
+                    self.obs_buf,
+                    image_buf.view(self.cfg.env.num_envs, -1),
+                    not_done.float().reshape(-1, 1),
+                ),
+                dim=-1,
             )
 
         # add noise if needed

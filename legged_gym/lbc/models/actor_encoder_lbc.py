@@ -75,7 +75,8 @@ class VisionEncoder(nn.Module):
 
     def forward(self, obs):
         """Takes full observations, then will throw out the depth map itself"""
-        return self.encoder(obs, masks=torch.tensor([True]))
+        masks = obs[:, -1].bool()
+        return self.encoder(obs[:, :-1], masks=masks)
 
 
 class Actor(nn.Module):
