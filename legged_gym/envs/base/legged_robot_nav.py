@@ -32,7 +32,7 @@ import cv2
 import numpy as np
 import quaternion
 import torch
-from isaacgym.torch_utils import quat_apply, quat_rotate_inverse
+from isaacgym.torch_utils import quat_apply, quat_rotate_inverse, get_euler_xyz
 from torchvision.utils import save_image
 
 from isaacgym import gymapi, gymtorch, gymutil
@@ -176,6 +176,13 @@ class LeggedRobotNav(LeggedRobot):
         if self.success:
             self.reset_buf[0] = True
             self.success = False
+        # Must kill the robot if its roll or pitch is too high
+        q = self.root_states[:, 2:6]
+        # NOTE: Not actually quit sure if roll and pitch be flipped
+        _, roll, pitch = get_euler_xyz(q)
+        roll, pitch = wrap_heading(roll), wrap_heading(pitch)
+        if (max(abs(roll), abs(pitch))) > np.pi/2:
+            self.reset_buf[0] = True
 
     def post_physics_step(self):
         """check terminations, compute observations and rewards
