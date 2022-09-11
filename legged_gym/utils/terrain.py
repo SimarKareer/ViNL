@@ -27,7 +27,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
-import time
+import os
 from itertools import permutations
 
 import imageio
@@ -269,7 +269,7 @@ class Terrain:
         num_blocks = int(area * BLOCKS_PER_AREA)
         # A block is an x, y, s1, s2, and h
         blocks = []
-        np.random.seed(int(time.time()))
+        np.random.seed(int(os.environ["ISAAC_SEED"]))
         for idx in range(num_blocks):
             success = False
             while not success:

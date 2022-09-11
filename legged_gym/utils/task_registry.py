@@ -105,7 +105,12 @@ class TaskRegistry:
             env_cfg, _ = self.get_cfgs(name)
         # override cfg from args (if specified)
         env_cfg, _ = update_cfg_from_args(env_cfg, None, args)
-        set_seed(env_cfg.seed)
+        if "ISAAC_SEED" in os.environ:
+            set_seed(int(os.environ["ISAAC_SEED"]))
+        else:
+            # EXTREEEEME H-H-H-H-H-HACK!
+            set_seed(env_cfg.seed)
+            os.environ["ISAAC_SEED"] = str(env_cfg.seed)
         # parse sim params (convert to dict first)
         sim_params = {"sim": class_to_dict(env_cfg.sim)}
         sim_params = parse_sim_params(args, sim_params)

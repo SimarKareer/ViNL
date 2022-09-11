@@ -42,6 +42,9 @@ import pickle
 
 
 def play(args):
+    # EXTREEEEME H-H-H-H-H-HACK!
+    os.environ["ISAAC_SEED"] = str(args.seed)
+
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing
     env_cfg.env.num_envs = min(train_cfg.runner.num_test_envs, 50)
