@@ -93,17 +93,22 @@ class Terrain:
         self.heightsamples = self.height_field_raw
         print(f"{self.heightsamples.shape=}")
         if self.type == "trimesh":
+            if cfg.map_path:
+                hscale, vscale = 0.4, 4
+            else:
+                hscale, vscale = 1, 1
             (
                 self.vertices,
                 self.triangles,
             ) = terrain_utils.convert_heightfield_to_trimesh(
                 self.height_field_raw,
-                self.cfg.horizontal_scale * 0.4,
-                self.cfg.vertical_scale * 4,
+                self.cfg.horizontal_scale * hscale,
+                self.cfg.vertical_scale * vscale,
                 self.cfg.slope_treshold,
             )
-            # Add small blocks on the ground
-            self.add_blocks()
+            if cfg.map_path:
+                # Add small blocks on the ground
+                self.add_blocks()
 
     def randomized_terrain(self):
         for k in range(self.cfg.num_sub_terrains):
