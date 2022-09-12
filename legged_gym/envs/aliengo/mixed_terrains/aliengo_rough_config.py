@@ -122,5 +122,5 @@ class AliengoRoughCfgPPO(LeggedRobotCfgPPO):
         experiment_name = "rough_aliengo"
         load_run = -1
         resume_path = "weights/ny_rough_aliengo_Sep06_11-46-01_RoughTerrainDMEnc_model_1500.pt"
-        max_iterations = 1500
+        max_iterations = 4500
 
