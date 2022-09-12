@@ -142,5 +142,5 @@ class AliengoObsCfgPPO(LeggedRobotCfgPPO):
 
         resume = True
         resume_path = (
-            "weights/rough_aliengo_Sep06_14-03-50_RoughTerrainDMEnc_model_1500.pt"
+            "weights/Sep11_20-17-29_RoughTerrainDMEnc_model_4450_13.272511272532865.pt"
         )
