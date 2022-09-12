@@ -38,6 +38,7 @@ class CNNRNN(nn.Module):
 
     def forward(self, observations, masks):
         if isinstance(observations, torch.Tensor):
+            observations = observations[:, :-1]
             prop, _, images = (
                 observations[:, :48],
                 observations[:, 48 : 48 + 187],
@@ -75,8 +76,11 @@ class VisionEncoder(nn.Module):
 
     def forward(self, obs):
         """Takes full observations, then will throw out the depth map itself"""
-        masks = obs[:, -1].bool()
-        return self.encoder(obs[:, :-1], masks=masks)
+        if isinstance(obs, dict):
+            masks = torch.tensor([True], dtype=torch.bool, device="cuda")
+        else:
+            masks = obs[:, -1].bool()
+        return self.encoder(obs, masks=masks)
 
 
 class Actor(nn.Module):
