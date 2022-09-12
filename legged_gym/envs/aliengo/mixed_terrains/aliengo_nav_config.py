@@ -140,7 +140,7 @@ class AliengoNavCfgAlg(LeggedRobotCfgPPO):
         num_test_envs = 1
 
         resume = True
-        resume_path = "weights/Sep11_23-48-28_debug_model_8550_17.203962330818175.pt"
+        resume_path = "weights/Sep11_23-48-28_debug_model_10000_16.232642258265987.pt"
 
         teacher_policy = "weights/Sep11_21-26-00_ObsEncDM_model_1150_19.086456518173218.pt"
         kin_nav_policy = "weights/VISUAL_LOCOMOTION_aliengo_kinematic_habitat_camera_up_2hz_57deg_camera_noise_sd_2_ckpt.88.pth"
