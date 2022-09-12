@@ -28,17 +28,17 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from isaacgym import gymapi
-from legged_gym import LEGGED_GYM_ROOT_DIR
 import os
-
-import isaacgym
-from legged_gym.envs import *
-from legged_gym.utils import get_args, export_policy_as_jit, task_registry, Logger
+import pickle
 
 import numpy as np
 import torch
-import pickle
+
+import isaacgym
+from isaacgym import gymapi
+from legged_gym import LEGGED_GYM_ROOT_DIR
+from legged_gym.envs import *
+from legged_gym.utils import Logger, export_policy_as_jit, get_args, task_registry
 
 
 def play(args):
@@ -59,7 +59,9 @@ def play(args):
     env_cfg.domain_rand.push_robots = False
 
     # prepare environment
-    env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg, record=True)
+    env, _ = task_registry.make_env(
+        name=args.task, args=args, env_cfg=env_cfg, record=True
+    )
     env.reset()
     obs = env.get_observations()
     # print("obs shape: ", obs.shape)
