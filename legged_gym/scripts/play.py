@@ -28,15 +28,11 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-import os
-import pickle
+import isaacgym
 
 import numpy as np
 import torch
 
-import isaacgym
-from isaacgym import gymapi
-from legged_gym import LEGGED_GYM_ROOT_DIR
 from legged_gym.envs import *
 from legged_gym.utils import Logger, export_policy_as_jit, get_args, task_registry
 
