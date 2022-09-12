@@ -138,7 +138,7 @@ class AliengoObsCfgPPO(LeggedRobotCfgPPO):
         # run_name = ""
         experiment_name = "obs_aliengo"
         load_run = -1
-        max_iterations = 3000  # number of policy updates
+        max_iterations = 6000  # number of policy updates
 
         resume = True
         resume_path = (
