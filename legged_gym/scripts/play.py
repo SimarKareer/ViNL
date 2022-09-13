@@ -48,6 +48,9 @@ def play(args):
 
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     env_cfg.terrain.map_path = args.map
+    train_cfg.runner.alt_ckpt = args.alt_ckpt
+    if args.alt_ckpt != "":
+        env_cfg.env.use_dm = True
     # override some parameters for testing
     env_cfg.env.num_envs = min(train_cfg.runner.num_test_envs, 50)
 

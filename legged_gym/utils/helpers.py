@@ -236,6 +236,12 @@ def get_args():
             "help": "Map png path for nav.",
             "default": "resources/maps/map1.png",
         },
+        {
+            "name": "--alt-ckpt",
+            "type": str,
+            "help": "Alternative path to a checkpoint.",
+            "default": "",
+        },
     ]
     # parse arguments
     args = gymutil.parse_arguments(

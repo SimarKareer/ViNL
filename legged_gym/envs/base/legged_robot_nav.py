@@ -52,6 +52,7 @@ from legged_gym.envs.aliengo.mixed_terrains.aliengo_nav_config import (
 SHOW = False
 PRINT_RT = False
 SUCCESS_RADIUS = 0.3235
+WRITE = False
 
 
 def wrap_heading(heading):
@@ -119,6 +120,15 @@ class LeggedRobotNav(LeggedRobot):
         self.prev_xy = self.start_pos
         self.num_steps = 0
         self.feet_collided = False
+        self.use_dm = cfg.env.use_dm
+        if self.use_dm:
+            print(
+                "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
+                "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
+                "!!!!!!!!!!!PRIVILEGED DEPTH IN USE!!!!!!!!!!!\n"
+                "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
+                "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            )
 
     def reset_idx(self, env_ids):
         if torch.numel(env_ids) == 0:
@@ -134,17 +144,18 @@ class LeggedRobotNav(LeggedRobot):
                 self.eval_metrics["success"] = 0.0
             for k, v in self.eval_metrics.items():
                 str_data += f"{k}: {v:.3f}\n"
-            print(str_data)
-            os.makedirs("evaluation_metrics", exist_ok=True)
-            map_name = os.environ["ISAAC_MAP_NAME"]
-            episode_id = os.environ["ISAAC_EPISODE_ID"]
-            seed = os.environ["ISAAC_SEED"]
-            filename = (
-                f"evaluation_metrics/{map_name}_{episode_id}_{seed}"
-                f"_{os.environ['ISAAC_NUM_COMPLETED_EPS']}.txt"
-            )
-            with open(filename, "a+") as f:
-                f.write(str_data)
+            print("Nav episode final stats:\n", str_data)
+            if WRITE:
+                os.makedirs("evaluation_metrics", exist_ok=True)
+                map_name = os.environ["ISAAC_MAP_NAME"]
+                episode_id = os.environ["ISAAC_EPISODE_ID"]
+                seed = os.environ["ISAAC_SEED"]
+                filename = (
+                    f"evaluation_metrics/{map_name}_{episode_id}_{seed}"
+                    f"_{os.environ['ISAAC_NUM_COMPLETED_EPS']}.txt"
+                )
+                with open(filename, "a+") as f:
+                    f.write(str_data)
 
             os.environ[
                 "ISAAC_NUM_COMPLETED_EPS"
@@ -338,10 +349,25 @@ class LeggedRobotNav(LeggedRobot):
         self.obs_buf = {
             "proprioception": prop,
             "level_image": level_image,
-            "tilted_image": tilted_image,
             "rho_theta": rho_theta,
             "reset": self.num_steps == 0,
         }
+
+        if self.use_dm:
+            heights = (
+                torch.clip(
+                    self.root_states[:, 2].unsqueeze(1) - 0.5 - self._get_heights(),
+                    -1,
+                    1.0,
+                )
+                * self.obs_scales.height_measurements
+            )
+            self.obs_buf["depth_map"] = heights
+        else:
+            self.obs_buf["tilted_image"] = tilted_image
+
+        level_image, tilted_image = self.get_images()
+
         if PRINT_RT:
             rt = rho_theta.cpu().numpy().tolist()
             rt[1] = np.rad2deg(rt[1])

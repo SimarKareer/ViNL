@@ -35,6 +35,7 @@ class LBC:
         schedule="fixed",
         device="cpu",
         kin_nav_policy=None,
+        alt_ckpt=None,
     ):
         self.device = device
 
@@ -66,6 +67,25 @@ class LBC:
             self.kin_nav_policy = None
         self.poll_count = 0
         self.lin_vel, self.ang_vel = 0.0, 0.0
+
+        # For baseline testing, overwrite the DM encoder and policy
+        self.use_dm = alt_ckpt is not None and alt_ckpt != ""
+        if self.use_dm:
+            print("!!!!!!!! USING A DM BASELINE !!!!!!!!")
+            print("Loading DM baseline:", alt_ckpt)
+            loaded_dict = torch.load(alt_ckpt, map_location="cuda")
+            encoder_weights = {
+                k[len("encoder."):]: v
+                for k, v in loaded_dict["model_state_dict"].items()
+                if k.startswith("encoder.")
+            }
+            policy_weights = {
+                k: v
+                for k, v in loaded_dict["model_state_dict"].items()
+                if k.startswith("actor.") or k == "std"
+            }
+            self.dm_encoder.load_state_dict(encoder_weights)
+            self.actor.load_state_dict(policy_weights)
 
     def init_storage(self):
         self.storage = (
@@ -128,10 +148,14 @@ class LBC:
         else:
             raise RuntimeError(f"Obs type {type(obs)} invalid!")
 
-        student_enc_dm = self.vision_encoder(obs)
+        extero_encoding = (
+            self.dm_encoder(obs["depth_map"])
+            if self.use_dm
+            else self.vision_encoder(obs)
+        )
 
         with torch.no_grad():
-            actions = self.actor.act(prop, student_enc_dm)
+            actions = self.actor.act(prop, extero_encoding)
 
         return actions
 
