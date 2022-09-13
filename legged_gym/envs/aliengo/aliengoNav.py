@@ -44,7 +44,6 @@ class AliengoNav(LeggedRobotNav):
         camera_props = gymapi.CameraProperties()
         if hfov is not None:
             camera_props.horizontal_fov = hfov
-        print("FOV: ", camera_props.horizontal_fov)
         # 1280 x 720
         width, height = cfg.env.camera_res
         camera_props.width = width
@@ -69,10 +68,7 @@ class AliengoNav(LeggedRobotNav):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
         self.camera_handles = []
 
-        print("ALIENGONAV INIT")
-
         if cfg.env.train_type == "lbc":
-            print("INITIALIZING 2 CAMERAS")
             for i in range(self.num_envs):
 
                 cam1, trans1 = self.make_handle_trans(cfg, np.deg2rad(30), i)

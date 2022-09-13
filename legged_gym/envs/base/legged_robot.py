@@ -869,7 +869,6 @@ class LeggedRobot(BaseTask):
         self.reward_functions = []
         self.reward_names = []
         for name, scale in self.reward_scales.items():
-            print(name, scale)
             if name == "termination":
                 continue
             self.reward_names.append(name)
@@ -1017,7 +1016,6 @@ class LeggedRobot(BaseTask):
 
         # save body names from the asset
         body_names = self.gym.get_asset_rigid_body_names(robot_asset)
-        print("body_names: ", body_names)
 
         self.dof_names = self.gym.get_asset_dof_names(robot_asset)
         self.num_bodies = len(body_names)
@@ -1092,7 +1090,6 @@ class LeggedRobot(BaseTask):
         self.feet_indices = torch.zeros(
             len(feet_names), dtype=torch.long, device=self.device, requires_grad=False
         )
-        print(feet_names)
         for i in range(len(feet_names)):
             self.feet_indices[i] = self.gym.find_actor_rigid_body_handle(
                 self.envs[0], self.actor_handles[0], feet_names[i]

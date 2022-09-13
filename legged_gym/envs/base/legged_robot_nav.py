@@ -45,7 +45,9 @@ from torchvision.utils import save_image
 from isaacgym import gymapi, gymtorch, gymutil
 from legged_gym.envs.base.legged_robot import LeggedRobot
 
-from .legged_robot_config import LeggedRobotCfg
+from legged_gym.envs.aliengo.mixed_terrains.aliengo_nav_config import (
+    AliengoNavCfg,
+)
 
 SHOW = False
 PRINT_RT = False
@@ -70,7 +72,7 @@ def quat_to_yaw(quat):
 
 class LeggedRobotNav(LeggedRobot):
     def __init__(
-        self, cfg: LeggedRobotCfg, sim_params, physics_engine, sim_device, headless
+        self, cfg: AliengoNavCfg, sim_params, physics_engine, sim_device, headless
     ):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
         episode = [float(i) for i in os.environ["isaac_episode"].split("_")]
@@ -153,7 +155,7 @@ class LeggedRobotNav(LeggedRobot):
         self.success = False
         self.eval_metrics = defaultdict(float)
         self.prev_xy = self.start_pos
-        if int(os.environ['ISAAC_NUM_COMPLETED_EPS']) >= 5:
+        if int(os.environ["ISAAC_NUM_COMPLETED_EPS"]) >= 5:
             quit()
 
     def _reset_root_states(self, env_ids):
@@ -191,7 +193,7 @@ class LeggedRobotNav(LeggedRobot):
         rho = np.linalg.norm(self.goal_xy - self.curr_xy)
         dx, dy = self.goal_xy - self.curr_xy
         theta = wrap_heading(np.arctan2(dy, dx) - yaw)
-        return torch.tensor([rho, theta], device="cuda")
+        return torch.tensor([rho, theta], device="cuda", dtype=torch.float32)
 
     def step(self, actions):
         """Apply actions, simulate, call self.post_physics_step()

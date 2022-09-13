@@ -133,7 +133,6 @@ class AliengoNavCfgAlg(LeggedRobotCfgPPO):
     class runner(LeggedRobotCfgPPO.runner):
         alg = "lbc"
         run_name = "debug"
-        # run_name = ""
         experiment_name = "lbc_aliengo"
         load_run = -1
         max_iterations = 10000  # number of policy updates

@@ -59,7 +59,7 @@ class LBC:
 
         # Nav-specific
         if kin_nav_policy is not None:
-            print(f"Loading the navigation policy: {kin_nav_policy}")
+            print(f"Loading kin_nav policy: {kin_nav_policy}")
             self.kin_nav_policy = NavPolicy(kin_nav_policy, device="cuda")
             self.kin_nav_policy.reset()
         else:
@@ -145,12 +145,11 @@ class LBC:
                     self.vision_encoder.encoder.hidden_state
                 )
         if self.poll_count % NAV_INTERVAL == 0:
-            rho_theta = torch.tensor(obs["rho_theta"], dtype=torch.float32)
             level_depth = obs["level_image"].squeeze(0)
             level_depth = torch.clamp(-level_depth, 0, MAX_DEPTH) / MAX_DEPTH
             kin_obs = {
                 "depth": level_depth,
-                "pointgoal_with_gps_compass": rho_theta,
+                "pointgoal_with_gps_compass": obs["rho_theta"],
             }
 
             lin_dist_raw, ang_dist_raw = self.kin_nav_policy.act(kin_obs)
@@ -164,9 +163,9 @@ class LBC:
             self.lin_vel = lin_dist / (NAV_INTERVAL / 50.0)
             self.ang_vel = ang_dist / (NAV_INTERVAL / 50.0)
 
-            rt = rho_theta.cpu().numpy().tolist()
-            rt[1] = np.rad2deg(rt[1])
             if PRINT_RT:
+                rt = obs["rho_theta"].cpu().numpy().tolist()
+                rt[1] = np.rad2deg(rt[1])
                 print(
                     f"rt: {rt[0]:.2f} {rt[1]:.2f}\tv: {self.lin_vel:.2f} "
                     f"{np.rad2deg(self.ang_vel):.2f}\t"

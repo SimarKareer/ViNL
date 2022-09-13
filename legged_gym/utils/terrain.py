@@ -79,14 +79,13 @@ class Terrain:
         self.length_per_env_pixels = int(self.env_length / cfg.horizontal_scale)
 
         self.border = int(cfg.border_size / self.cfg.horizontal_scale)
-        print("BORDER: ", self.border, cfg.border_size)
         self.tot_cols = int(cfg.num_cols * self.width_per_env_pixels) + 2 * self.border
         self.tot_rows = int(cfg.num_rows * self.length_per_env_pixels) + 2 * self.border
 
         self.height_field_raw = np.zeros((self.tot_rows, self.tot_cols), dtype=np.int16)
         self.terrain_start = None
         if cfg.map_path:
-            im = np.array(imageio.imread(cfg.map_path))
+            im = np.array(imageio.v2.imread(cfg.map_path))
             im = im[:, :, 3]
             scaled_im = im.repeat(3, axis=0).repeat(3, axis=1)
             self.height_field_raw = to_shape(scaled_im, (900, 900))
@@ -99,7 +98,6 @@ class Terrain:
             self.randomized_terrain()
 
         self.heightsamples = self.height_field_raw
-        print(f"{self.heightsamples.shape=}")
         if self.type == "trimesh":
             if cfg.map_path:
                 hscale, vscale = 0.4, 4
@@ -366,6 +364,7 @@ class Terrain:
         # A block is an x, y, s1, s2, and h
         blocks = []
         np.random.seed(int(os.environ["ISAAC_SEED"]))
+        print(f"Generating {num_blocks} obstacles..")
         for _ in tqdm.trange(num_blocks):
             success = False
             while not success:

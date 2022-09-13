@@ -20,9 +20,6 @@ class CNNRNN(nn.Module):
             def __init__(self):
                 self.spaces = {"depth": torch.zeros(image_size)}
 
-        print("CNN OUT SIZE: ", cnn_out_size)
-        print("IM SIZE: ", image_size)
-
         self.cnn = SimpleCNN(observationSpace(), cnn_out_size)
 
         self.rnn_layers = rnn_layers

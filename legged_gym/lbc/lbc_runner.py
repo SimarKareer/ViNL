@@ -22,7 +22,6 @@ class LbcRunner:
         self.env = env
         envcfg = self.env.cfg
 
-        print("traincfg: ", train_cfg)
         enc_hidden_dims = train_cfg["obsSize"]["encoder_hidden_dims"]
         num_dm_encoder_obs = train_cfg["obsSize"]["num_dm_encoder_obs"]
 
