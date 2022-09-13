@@ -285,6 +285,7 @@ class Terrain:
             goal = np.array(start_goal[2:4])
 
         self.terrain_start = start.copy()
+        self.terrain_goal = goal.copy()
 
         # Convert coordinates to be proper terrain coordinates ("global")
         start, goal = [
@@ -353,6 +354,7 @@ class Terrain:
         BLOCKS_PER_AREA = 1.0
         BLOCK_HEIGHT = 0.1
         DIST_THRESH = 0.75
+        SPAWN_OBS_THRESH = 1.5
         POTENTIAL_DIMS = [(0.15, 0.15), (0.15, 0.3), (0.3, 0.15)]
 
         x0, x1, y0, y1 = self.get_terrain_bounds()
@@ -367,7 +369,15 @@ class Terrain:
                 s1, s2 = POTENTIAL_DIMS[np.random.randint(3)]
                 x = np.random.rand() * (x1 - x0) + x0
                 y = np.random.rand() * (y1 - y0) + y0
-                if np.linalg.norm(np.array([x, y]) - self.terrain_start) < 3:
+                if (
+                    np.linalg.norm(np.array([x, y]) - self.terrain_start)
+                    < SPAWN_OBS_THRESH
+                ):
+                    continue
+                if (
+                    np.linalg.norm(np.array([x, y]) - self.terrain_goal)
+                    < SPAWN_OBS_THRESH
+                ):
                     continue
                 new_block = (x, y, s1, s2, BLOCK_HEIGHT)
                 if blocks:
