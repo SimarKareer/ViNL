@@ -267,9 +267,12 @@ class Terrain:
         episode_id = int(os.environ["ISAAC_EPISODE_ID"])
         scene = os.path.basename(self.cfg.map_path).split(".")[0]
         os.environ["ISAAC_MAP_NAME"] = scene
-        if episode_id == -1:
+        if episode_id == -10:
             start, goal = self.generate_episode()
         else:
+            if episode_id == -1:
+                # Select a random episode
+                episode_id = np.random.randint(10)
             matching_files = glob.glob(f"episodes/{scene}_{episode_id}_*png")
             assert (
                 len(matching_files) <= 1
