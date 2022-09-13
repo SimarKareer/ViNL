@@ -39,6 +39,7 @@ from numpy.random import choice
 
 from isaacgym import terrain_utils
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg
+import tqdm
 
 OBS_DIST_THRESH = 0.5
 EUCLID_THRESH = 5.0
@@ -83,6 +84,7 @@ class Terrain:
         self.tot_rows = int(cfg.num_rows * self.length_per_env_pixels) + 2 * self.border
 
         self.height_field_raw = np.zeros((self.tot_rows, self.tot_cols), dtype=np.int16)
+        self.terrain_start = None
         if cfg.map_path:
             im = np.array(imageio.imread(cfg.map_path))
             im = im[:, :, 3]
@@ -282,6 +284,8 @@ class Terrain:
             start = np.array(start_goal[:2])
             goal = np.array(start_goal[2:4])
 
+        self.terrain_start = start.copy()
+
         # Convert coordinates to be proper terrain coordinates ("global")
         start, goal = [
             np.array([-(89.9 * 250 / 900) + i[0], -(89.9 * 250 / 900) + i[1]])
@@ -348,7 +352,7 @@ class Terrain:
     def add_blocks(self):
         BLOCKS_PER_AREA = 1.0
         BLOCK_HEIGHT = 0.1
-        DIST_THRESH = 1.0
+        DIST_THRESH = 0.75
         POTENTIAL_DIMS = [(0.15, 0.15), (0.15, 0.3), (0.3, 0.15)]
 
         x0, x1, y0, y1 = self.get_terrain_bounds()
@@ -357,20 +361,20 @@ class Terrain:
         # A block is an x, y, s1, s2, and h
         blocks = []
         np.random.seed(int(os.environ["ISAAC_SEED"]))
-        for idx in range(num_blocks):
+        for _ in tqdm.trange(num_blocks):
             success = False
             while not success:
                 s1, s2 = POTENTIAL_DIMS[np.random.randint(3)]
                 x = np.random.rand() * (x1 - x0) + x0
                 y = np.random.rand() * (y1 - y0) + y0
-                if np.linalg.norm(np.array([x, y]) - np.array([x0, y0])) < 3:
+                if np.linalg.norm(np.array([x, y]) - self.terrain_start) < 3:
                     continue
                 new_block = (x, y, s1, s2, BLOCK_HEIGHT)
                 if blocks:
-                    blocks_arr = np.array(blocks)
-                    new_block_arr = np.array(new_block)
+                    blocks_arr = np.array(blocks)[:, :2]
+                    new_block_arr = np.array(new_block)[:2]
                     diff = blocks_arr - new_block_arr
-                    if min(min(diff[:, 0]), min(diff[:, 1])) > DIST_THRESH:
+                    if min(np.linalg.norm(diff, axis=1)) < DIST_THRESH:
                         continue
                 blocks.append(new_block)
                 success = True
