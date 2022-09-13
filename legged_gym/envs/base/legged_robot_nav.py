@@ -121,18 +121,40 @@ class LeggedRobotNav(LeggedRobot):
     def reset_idx(self, env_ids):
         if torch.numel(env_ids) == 0:
             return
-        if self.num_steps > 0:
+        if self.num_steps > 1:
             self.eval_metrics["feet_collisions_per_meter"] = (
                 self.eval_metrics["feet_collisions"]
                 / self.eval_metrics["dist_traveled"]
             )
+
+            str_data = ""
+            if "success" not in self.eval_metrics:
+                self.eval_metrics["success"] = 0.0
             for k, v in self.eval_metrics.items():
-                print(f"{k}: {v:.3f}")
+                str_data += f"{k}: {v:.3f}\n"
+            print(str_data)
+            os.makedirs("evaluation_metrics", exist_ok=True)
+            map_name = os.environ["ISAAC_MAP_NAME"]
+            episode_id = os.environ["ISAAC_EPISODE_ID"]
+            seed = os.environ["ISAAC_SEED"]
+            filename = (
+                f"evaluation_metrics/{map_name}_{episode_id}_{seed}"
+                f"_{os.environ['ISAAC_NUM_COMPLETED_EPS']}.txt"
+            )
+            with open(filename, "a+") as f:
+                f.write(str_data)
+
+            os.environ[
+                "ISAAC_NUM_COMPLETED_EPS"
+            ] = f"{int(os.environ['ISAAC_NUM_COMPLETED_EPS']) + 1}"
+
         self.num_steps = 0
         super().reset_idx(env_ids)
         self.success = False
         self.eval_metrics = defaultdict(float)
         self.prev_xy = self.start_pos
+        if int(os.environ['ISAAC_NUM_COMPLETED_EPS']) >= 5:
+            quit()
 
     def _reset_root_states(self, env_ids):
         """Resets ROOT states position and velocities of selected environmments
@@ -231,6 +253,7 @@ class LeggedRobotNav(LeggedRobot):
         super().check_termination()
         if self.success:
             self.reset_buf[0] = True
+            self.eval_metrics["success"] = 1.0
             self.success = False
         # Must kill the robot if its roll or pitch is too high
         q = self.root_states[:, 2:6]
