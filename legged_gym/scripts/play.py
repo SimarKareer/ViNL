@@ -45,6 +45,7 @@ def play(args):
     os.environ["ISAAC_EPISODE_ID"] = str(args.episode_id)
     os.environ["ISAAC_MAP"] = args.map
     os.environ["ISAAC_NUM_COMPLETED_EPS"] = "0"
+    os.environ["ISAAC_EVAL_DIR"] = args.eval_dir
 
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     env_cfg.terrain.map_path = args.map

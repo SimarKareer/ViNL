@@ -242,6 +242,12 @@ def get_args():
             "help": "Alternative path to a checkpoint.",
             "default": "",
         },
+        {
+            "name": "--eval-dir",
+            "type": str,
+            "help": "Path to where evaluations are saved.",
+            "default": "evaluation_metrics",
+        },
     ]
     # parse arguments
     args = gymutil.parse_arguments(

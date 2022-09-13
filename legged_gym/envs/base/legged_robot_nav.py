@@ -52,7 +52,7 @@ from legged_gym.envs.aliengo.mixed_terrains.aliengo_nav_config import (
 SHOW = False
 PRINT_RT = False
 SUCCESS_RADIUS = 0.3235
-WRITE = False
+WRITE = True
 
 
 def wrap_heading(heading):
@@ -146,12 +146,13 @@ class LeggedRobotNav(LeggedRobot):
                 str_data += f"{k}: {v:.3f}\n"
             print("Nav episode final stats:\n", str_data)
             if WRITE:
-                os.makedirs("evaluation_metrics", exist_ok=True)
+                eval_dir = os.environ["ISAAC_EVAL_DIR"]
+                os.makedirs(eval_dir, exist_ok=True)
                 map_name = os.environ["ISAAC_MAP_NAME"]
                 episode_id = os.environ["ISAAC_EPISODE_ID"]
                 seed = os.environ["ISAAC_SEED"]
                 filename = (
-                    f"evaluation_metrics/{map_name}_{episode_id}_{seed}"
+                    f"{eval_dir}/{map_name}_{episode_id}_{seed}"
                     f"_{os.environ['ISAAC_NUM_COMPLETED_EPS']}.txt"
                 )
                 with open(filename, "a+") as f:
@@ -239,10 +240,6 @@ class LeggedRobotNav(LeggedRobot):
         for k, v in self.obs_buf.items():
             if not isinstance(v, bool):
                 self.obs_buf[k] = torch.clip(v, -clip_obs, clip_obs)
-        if self.privileged_obs_buf is not None:
-            self.privileged_obs_buf = torch.clip(
-                self.privileged_obs_buf, -clip_obs, clip_obs
-            )
 
         if self.obs_buf["rho_theta"][0] <= SUCCESS_RADIUS:
             self.success = True
