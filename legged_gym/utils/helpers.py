@@ -224,6 +224,18 @@ def get_args():
             "type": int,
             "help": "Maximum number of training iterations. Overrides config file if provided.",
         },
+        {
+            "name": "--episode-id",
+            "type": int,
+            "help": "Episode ID, default of -1.",
+            "default": -1,
+        },
+        {
+            "name": "--map",
+            "type": str,
+            "help": "Map png path for nav.",
+            "default": "resources/maps/map1.png",
+        },
     ]
     # parse arguments
     args = gymutil.parse_arguments(

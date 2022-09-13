@@ -27,15 +27,21 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
+import glob
 import os
+import os.path as osp
 from itertools import permutations
 
+import cv2
 import imageio
 import numpy as np
 from numpy.random import choice
 
 from isaacgym import terrain_utils
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg
+
+OBS_DIST_THRESH = 0.5
+EUCLID_THRESH = 5.0
 
 
 def to_shape(a, shape):
@@ -107,6 +113,7 @@ class Terrain:
                 self.cfg.slope_treshold,
             )
             if cfg.map_path:
+                self.set_start_goal()
                 # Add small blocks on the ground
                 self.add_blocks()
 
@@ -254,17 +261,97 @@ class Terrain:
         )
         self.env_origins[i, j] = [env_origin_x, env_origin_y, env_origin_z]
 
+    def set_start_goal(self):
+        episode_id = int(os.environ["ISAAC_EPISODE_ID"])
+        scene = os.path.basename(self.cfg.map_path).split(".")[0]
+        os.environ["ISAAC_MAP_NAME"] = scene
+        if episode_id == -1:
+            start, goal = self.generate_episode()
+        else:
+            matching_files = glob.glob(f"episodes/{scene}_{episode_id}_*png")
+            assert (
+                len(matching_files) <= 1
+            ), f"Too many episode matches: {matching_files}"
+            assert (
+                matching_files
+            ), f"Episode id {episode_id} for scene {scene} not found!"
+            start_goal = [
+                float(i)
+                for i in osp.basename(matching_files[0])[: -len(".png")].split("_")[2:6]
+            ]
+            start = np.array(start_goal[:2])
+            goal = np.array(start_goal[2:4])
+
+        # Convert coordinates to be proper terrain coordinates ("global")
+        start, goal = [
+            np.array([-(89.9 * 250 / 900) + i[0], -(89.9 * 250 / 900) + i[1]])
+            for i in [start, goal]
+        ]
+
+        os.environ["isaac_episode"] = "_".join([str(i) for i in [*start, *goal]])
+
+    def generate_episode(self):
+        x0, x1, y0, y1 = self.get_terrain_bounds()
+        print("Map bounds: ", x0, x1, y0, y1)
+        done = False
+        start, goal = None, None
+        while not done:
+            start, goal = [
+                np.array([np.random.uniform(x0, x1), np.random.uniform(y0, y1)])
+                for _ in range(2)
+            ]
+            done = self.validate_start_goal(start, goal)
+
+        # Get start and goal in image coordinates
+        img = cv2.imread(self.cfg.map_path, cv2.IMREAD_UNCHANGED)
+        u0, v0, w, h = cv2.boundingRect(img[..., 3])
+        start_im, goal_im = [
+            (
+                int(map_range(x, x0, x1, v0, v0 + h)),
+                int(map_range(y, y0, y1, u0, u0 + w)),
+            )
+            for y, x in [start, goal]
+        ]
+
+        img = cv2.cvtColor(img[..., -1], cv2.COLOR_GRAY2BGR)
+        for (cx, cy), color in zip([start_im, goal_im], [(0, 255, 0), (0, 0, 255)]):
+            cv2.circle(img, (cx, cy), 3, color, -1)
+        os.makedirs("episodes", exist_ok=True)
+        scene = os.path.basename(self.cfg.map_path).split(".")[0]
+        cv2.imwrite(
+            f"episodes/{scene}_"
+            f"{'_'.join([f'{i:.2f}' for i in [*start, *goal]])}.png",
+            img,
+        )
+        return start, goal
+
+    def validate_start_goal(self, start, goal):
+        # Check the Euclidean distance
+        if np.linalg.norm(goal - start) < EUCLID_THRESH:
+            return False
+
+        # Check if there are any obstacles near the start and goal
+        obs_xy_vertices = self.vertices[self.vertices[:, 2] > 0.8][:, :2]
+        for pt in [start, goal]:
+            for v in obs_xy_vertices:
+                if np.linalg.norm(pt - v) < OBS_DIST_THRESH:
+                    return False
+        return True
+
+    def get_terrain_bounds(self):
+        x0 = np.amin([i[0] for i in self.vertices if i[2] > 0.1])
+        x1 = np.amax([i[0] for i in self.vertices if i[2] > 0.1])
+        y0 = np.amin([i[1] for i in self.vertices if i[2] > 0.1])
+        y1 = np.amax([i[1] for i in self.vertices if i[2] > 0.1])
+        return x0, x1, y0, y1
+
     def add_blocks(self):
         BLOCKS_PER_AREA = 1.0
         BLOCK_HEIGHT = 0.1
         DIST_THRESH = 1.0
         POTENTIAL_DIMS = [(0.15, 0.15), (0.15, 0.3), (0.3, 0.15)]
 
-        x0 = np.amin([i[0] for i in self.vertices if i[2] > 0.1])
-        x1 = np.amax([i[0] for i in self.vertices if i[2] > 0.1])
-        y0 = np.amin([i[1] for i in self.vertices if i[2] > 0.1])
-        y1 = np.amax([i[1] for i in self.vertices if i[2] > 0.1])
-
+        x0, x1, y0, y1 = self.get_terrain_bounds()
         area = (x1 - x0) * (y1 - y0)
         num_blocks = int(area * BLOCKS_PER_AREA)
         # A block is an x, y, s1, s2, and h
@@ -343,3 +430,7 @@ def pit_terrain(terrain, depth, platform_size=1.0):
     y1 = terrain.width // 2 - platform_size
     y2 = terrain.width // 2 + platform_size
     terrain.height_field_raw[x1:x2, y1:y2] = -depth
+
+
+def map_range(x, in_min, in_max, out_min, out_max):
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min

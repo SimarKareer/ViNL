@@ -42,8 +42,11 @@ def play(args):
     if args.seed is None:
         args.seed = 1
     os.environ["ISAAC_SEED"] = str(args.seed)
+    os.environ["ISAAC_EPISODE_ID"] = str(args.episode_id)
+    os.environ["ISAAC_MAP"] = args.map
 
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
+    env_cfg.terrain.map_path = args.map
     # override some parameters for testing
     env_cfg.env.num_envs = min(train_cfg.runner.num_test_envs, 50)
 

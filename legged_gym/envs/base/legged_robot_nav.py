@@ -27,6 +27,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
+import os
 from collections import defaultdict
 
 import cv2
@@ -72,8 +73,9 @@ class LeggedRobotNav(LeggedRobot):
         self, cfg: LeggedRobotCfg, sim_params, physics_engine, sim_device, headless
     ):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
-        self.start_pos = np.array([9, 9]) - 20
-        self.goal_xy = np.array([16, 16]) - 20
+        episode = [float(i) for i in os.environ["isaac_episode"].split("_")]
+        self.start_pos = np.array(episode[:2])
+        self.goal_xy = np.array(episode[2:])
         default_pose = gymapi.Transform()
         default_pose.p.x, default_pose.p.y = 0.0, 0.0
         default_pose.p.z = 0.0
