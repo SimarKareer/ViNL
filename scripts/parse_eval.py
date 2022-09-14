@@ -42,18 +42,17 @@ def main(eval_dir):
         "success",
         "dist_traveled",
         "feet_collisions_per_meter",
-        "feet_collisions",
     ]
     for m in nice_metrics:
         if m == "success":
             row += (
                 f"{np.mean(aggregated_stats[m])*100:.2f} "
-                f"$\pm$ {np.std(aggregated_stats[m])*100:.2f}\t"
+                f"$\pm$ {np.std(aggregated_stats[m])*100:.2f} & "
             )
         else:
             row += (
                 f"{np.mean(aggregated_stats[m]):.2f} "
-                f"$\pm$ {np.std(aggregated_stats[m]):.2f}\t"
+                f"$\pm$ {np.std(aggregated_stats[m]):.2f} & "
             )
     print("\t".join(nice_metrics))
     print(row[:-1] + " \\\\")
