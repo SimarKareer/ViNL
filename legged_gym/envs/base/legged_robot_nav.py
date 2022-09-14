@@ -27,6 +27,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
+import json
 import os
 from collections import defaultdict
 
@@ -43,11 +44,8 @@ from isaacgym.torch_utils import (
 from torchvision.utils import save_image
 
 from isaacgym import gymapi, gymtorch, gymutil
+from legged_gym.envs.aliengo.mixed_terrains.aliengo_nav_config import AliengoNavCfg
 from legged_gym.envs.base.legged_robot import LeggedRobot
-
-from legged_gym.envs.aliengo.mixed_terrains.aliengo_nav_config import (
-    AliengoNavCfg,
-)
 
 SHOW = False
 PRINT_RT = False
@@ -138,13 +136,15 @@ class LeggedRobotNav(LeggedRobot):
                 self.eval_metrics["feet_collisions"]
                 / self.eval_metrics["dist_traveled"]
             )
-
-            str_data = ""
+            self.eval_metrics["num_steps"] = self.num_steps
             if "success" not in self.eval_metrics:
                 self.eval_metrics["success"] = 0.0
+
+            str_data = ""
             for k, v in self.eval_metrics.items():
                 str_data += f"{k}: {v:.3f}\n"
             print("Nav episode final stats:\n", str_data)
+
             if WRITE:
                 eval_dir = os.environ["ISAAC_EVAL_DIR"]
                 os.makedirs(eval_dir, exist_ok=True)
@@ -153,10 +153,15 @@ class LeggedRobotNav(LeggedRobot):
                 seed = os.environ["ISAAC_SEED"]
                 filename = (
                     f"{eval_dir}/{map_name}_{episode_id}_{seed}"
-                    f"_{os.environ['ISAAC_NUM_COMPLETED_EPS']}.txt"
+                    f"_{os.environ['ISAAC_NUM_COMPLETED_EPS']}.json"
                 )
-                with open(filename, "a+") as f:
-                    f.write(str_data)
+                json_dict = {**self.eval_metrics}
+                json_dict["map_name"] = map_name
+                json_dict["episode_id"] = episode_id
+                json_dict["seed"] = seed
+                json_dict["attempt"] = os.environ["ISAAC_NUM_COMPLETED_EPS"]
+                with open(filename, "w") as f:
+                    json.dump(json_dict, f)
 
             os.environ[
                 "ISAAC_NUM_COMPLETED_EPS"
