@@ -1,5 +1,6 @@
 import argparse
 import glob
+import json
 import os.path as osp
 
 import numpy as np
@@ -10,6 +11,7 @@ METRICS = [
     "feet_collisions",
     "feet_collisions_per_meter",
     "success",
+    "num_steps",
 ]
 KEYS = [
     "map_name",
@@ -20,29 +22,36 @@ KEYS = [
 
 
 def main(eval_dir):
-    txt_files = glob.glob(osp.join(eval_dir, "*.txt"))
-    data_dict = {k: [] for k in KEYS}
-    for txt in txt_files:
-        data = parse_txt(txt)
-        assert len(KEYS) == len(data)
-        for k, v in zip(KEYS, data):
-            data_dict[k].append(v)
-    print(f"Num episodes: {len(data_dict['map_name'])}")
-
-    df = pd.DataFrame.from_dict(data_dict)
-    num_attempts = max(df["attempt"])
-    aggregated_stats = {k: [] for k in METRICS}
-    for idx in range(int(num_attempts) + 1):
-        for k in METRICS:
-            filtered_df = df[df["attempt"] == idx]
-            aggregated_stats[k].append(np.mean(filtered_df[k]))
-
-    row = ""
     nice_metrics = [
         "success",
         "dist_traveled",
         "feet_collisions_per_meter",
     ]
+
+    data_dict = {k: [] for k in KEYS}
+    files = glob.glob(osp.join(eval_dir, "*.txt"))
+    if files:
+        file_parser, num_keys = parse_txt, len(KEYS) - 1
+    else:
+        file_parser, num_keys = parse_json, len(KEYS)
+        files = glob.glob(osp.join(eval_dir, "*.json"))
+        nice_metrics.append("num_steps")
+    for file in files:
+        data = file_parser(file)
+        assert num_keys == len(data)
+        for k, v in zip(KEYS, data):
+            data_dict[k].append(v)
+    print(f"Num episodes: {len(data_dict['map_name'])}")
+
+    df = pd.DataFrame.from_dict(data_dict)
+    num_attempts = max(df["attempt"]) + 1
+    aggregated_stats = {k: [] for k in METRICS}
+    for idx in range(int(num_attempts)):
+        for k in METRICS:
+            filtered_df = df[df["attempt"] == idx]
+            aggregated_stats[k].append(np.mean(filtered_df[k]))
+
+    row = ""
     for m in nice_metrics:
         if m == "success":
             row += (
@@ -55,7 +64,7 @@ def main(eval_dir):
                 f"$\pm$ {np.std(aggregated_stats[m]):.2f} & "
             )
     print("\t".join(nice_metrics))
-    print(row[:-1] + " \\\\")
+    print(row[:-2] + "\\\\")
 
 
 def parse_txt(txt):
@@ -84,6 +93,11 @@ def parse_txt(txt):
         success,
     )
 
+
+def parse_json(file):
+    with open(file) as f:
+        data = json.load(f)
+    return [data[KEYS[0]]] + [float(data[k]) for k in KEYS[1:]]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
