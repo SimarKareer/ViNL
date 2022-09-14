@@ -27,6 +27,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
+import os
 
 import isaacgym
 from legged_gym.envs import *
@@ -38,6 +39,7 @@ def train(args):
         os.environ["ISAAC_BLOCK_MIN_HEIGHT"],
         os.environ["ISAAC_BLOCK_MAX_HEIGHT"],
     ) = args.block.split("_")
+    os.environ["ISAAC_TRAIN_OR_EVAL"] = "TRAIN"
     env, env_cfg = task_registry.make_env(name=args.task, args=args)
     ppo_runner, train_cfg = task_registry.make_alg_runner(
         env=env, name=args.task, args=args

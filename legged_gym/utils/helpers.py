@@ -153,6 +153,28 @@ def update_cfg_from_args(env_cfg, cfg_train, args):
             cfg_train.runner.load_run = args.load_run
         if args.checkpoint is not None:
             cfg_train.runner.checkpoint = args.checkpoint
+        if (
+            args.alt_ckpt != ""
+            and os.environ.get("ISAAC_TRAIN_OR_EVAL", "EVAL") == "TRAIN"
+        ):
+            if cfg_train.runner.alg == "lbc":
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print("OVERRIDING TEACHER POLICY:", args.alt_ckpt)
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                cfg_train.runner.teacher_policy = args.alt_ckpt
+            else:
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print("OVERRIDING RESUME PATH:", args.alt_ckpt)
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                cfg_train.runner.resume_path = args.alt_ckpt
 
     return env_cfg, cfg_train
 
