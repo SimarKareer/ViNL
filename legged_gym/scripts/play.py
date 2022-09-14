@@ -46,15 +46,19 @@ def play(args):
     os.environ["ISAAC_MAP"] = args.map
     os.environ["ISAAC_NUM_COMPLETED_EPS"] = "0"
     os.environ["ISAAC_EVAL_DIR"] = args.eval_dir
+    (
+        os.environ["ISAAC_BLOCK_MIN_HEIGHT"],
+        os.environ["ISAAC_BLOCK_MAX_HEIGHT"],
+    ) = args.block.split("_")
 
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     env_cfg.terrain.map_path = args.map
     train_cfg.runner.alt_ckpt = args.alt_ckpt
     if args.alt_ckpt != "":
         env_cfg.env.use_dm = True
+
     # override some parameters for testing
     env_cfg.env.num_envs = min(train_cfg.runner.num_test_envs, 50)
-
     env_cfg.terrain.num_rows = 5
     env_cfg.terrain.num_cols = 5
     env_cfg.terrain.curriculum = False

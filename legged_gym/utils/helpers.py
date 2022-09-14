@@ -248,6 +248,12 @@ def get_args():
             "help": "Path to where evaluations are saved.",
             "default": "evaluation_metrics",
         },
+        {
+            "name": "--block",
+            "type": str,
+            "help": "Range of heights blocks can be.",
+            "default": "0.14_0.15",
+        },
     ]
     # parse arguments
     args = gymutil.parse_arguments(

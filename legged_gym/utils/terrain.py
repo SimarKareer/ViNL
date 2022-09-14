@@ -211,15 +211,12 @@ class Terrain:
             )
         elif choice < self.proportions[5]:
             num_rectangles = int(200 * difficulty)
-            # num_rectangles = 0
             rectangle_min_size = 2
             rectangle_max_size = 5
-            min_height = 0.14
-            max_height = 0.15
             terrain_utils.discrete_obstacles_terrain_cells(
                 terrain,
-                min_height,
-                max_height,
+                float(os.environ["ISAAC_BLOCK_MIN_HEIGHT"]),
+                float(os.environ["ISAAC_BLOCK_MAX_HEIGHT"]),
                 rectangle_min_size,
                 rectangle_max_size,
                 num_rectangles,
@@ -353,10 +350,11 @@ class Terrain:
 
     def add_blocks(self):
         BLOCKS_PER_AREA = 1.0
-        BLOCK_HEIGHT = 0.1
         DIST_THRESH = 0.75
         SPAWN_OBS_THRESH = 1.5
         POTENTIAL_DIMS = [(0.15, 0.15), (0.15, 0.3), (0.3, 0.15)]
+        min_block_height = float(os.environ["ISAAC_BLOCK_MIN_HEIGHT"])
+        max_block_height = float(os.environ["ISAAC_BLOCK_MAX_HEIGHT"])
 
         x0, x1, y0, y1 = self.get_terrain_bounds()
         area = (x1 - x0) * (y1 - y0)
@@ -381,7 +379,8 @@ class Terrain:
                     < SPAWN_OBS_THRESH
                 ):
                     continue
-                new_block = (x, y, s1, s2, BLOCK_HEIGHT)
+                block_height = np.random.uniform(min_block_height, max_block_height)
+                new_block = (x, y, s1, s2, block_height)
                 if blocks:
                     blocks_arr = np.array(blocks)[:, :2]
                     new_block_arr = np.array(new_block)[:2]
