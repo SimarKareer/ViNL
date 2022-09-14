@@ -47,16 +47,16 @@ def main(eval_dir):
     for m in nice_metrics:
         if m == "success":
             row += (
-                f"{np.mean(aggregated_stats[m])*100:.2f}"
-                f"+-{np.std(aggregated_stats[m])*100:.2f}\t"
+                f"{np.mean(aggregated_stats[m])*100:.2f} "
+                f"$\pm$ {np.std(aggregated_stats[m])*100:.2f}\t"
             )
         else:
             row += (
-                f"{np.mean(aggregated_stats[m]):.2f}"
-                f"+-{np.std(aggregated_stats[m]):.2f}\t"
+                f"{np.mean(aggregated_stats[m]):.2f} "
+                f"$\pm$ {np.std(aggregated_stats[m]):.2f}\t"
             )
     print("\t".join(nice_metrics))
-    print(row[:-1])
+    print(row[:-1] + " \\\\")
 
 
 def parse_txt(txt):
