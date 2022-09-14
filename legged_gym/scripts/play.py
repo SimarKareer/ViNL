@@ -53,13 +53,13 @@ def play(args):
 
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     env_cfg.terrain.map_path = args.map
-    train_cfg.runner.alt_ckpt = args.alt_ckpt
     if args.alt_ckpt != "":
         loaded_dict = torch.load(args.alt_ckpt, map_location="cpu")
         if "model_state_dict" not in loaded_dict:
             train_cfg.runner.resume_path = args.alt_ckpt
         else:
             env_cfg.env.use_dm = True
+            train_cfg.runner.alt_ckpt = args.alt_ckpt
         del loaded_dict
 
     # override some parameters for testing
