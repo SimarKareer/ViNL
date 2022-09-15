@@ -17,15 +17,14 @@ KEYS = ["map_name", "episode_id", "seed", "attempt"] + METRICS
 
 
 def main(eval_dir):
-    nice_metrics = ["success", "feet_collisions_per_meter"]
-
     files = glob.glob(osp.join(eval_dir, "*.txt"))
     if files:
         file_parser, num_keys, num_metrics = parse_txt, len(KEYS) - 1, len(METRICS) - 1
+        nice_metrics = ["success", "feet_collisions_per_meter"]
     else:
         file_parser, num_keys, num_metrics = parse_json, len(KEYS), len(METRICS)
         files = glob.glob(osp.join(eval_dir, "*.json"))
-        nice_metrics.append("num_steps")
+        nice_metrics = ["success", "feet_collisions_per_step"]
     data_dict = {k: [] for k in KEYS[:num_keys]}
     for file in files:
         data = file_parser(file)
@@ -39,15 +38,24 @@ def main(eval_dir):
 
     # Group by seed (attempt) and get mean and std of mean across attempts
     num_attempts = max(df["attempt"]) + 1
-    aggregated_stats = {k: [] for k in METRICS[:num_metrics]}
+    aggregated_stats = {
+        k: [] for k in METRICS[:num_metrics] + ["feet_collisions_per_step"]
+    }
     for idx in range(int(num_attempts)):
         filtered_df = df[df["attempt"] == idx]
         for k in METRICS[:num_metrics]:
             aggregated_stats[k].append(np.mean(filtered_df[k]))
+        if "feet_collisions_per_step" in nice_metrics:
+            feet_collisions_per_step = np.array(
+                filtered_df["feet_collisions"]
+            ) / np.array(filtered_df["num_steps"])
+            aggregated_stats["feet_collisions_per_step"].append(
+                np.mean(feet_collisions_per_step)
+            )
 
     row = ""
     for m in nice_metrics:
-        if m == "success":
+        if m in ["success", "feet_collisions_per_step"]:
             row += (
                 f"{np.mean(aggregated_stats[m])*100:.2f} "
                 f"$\pm$ {np.std(aggregated_stats[m])*100:.2f} & "
