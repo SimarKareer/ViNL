@@ -43,7 +43,6 @@ def play(args):
         args.seed = 1
     os.environ["ISAAC_SEED"] = str(args.seed)
     os.environ["ISAAC_EPISODE_ID"] = str(args.episode_id)
-    os.environ["ISAAC_MAP"] = args.map
     os.environ["ISAAC_NUM_COMPLETED_EPS"] = "0"
     os.environ["ISAAC_EVAL_DIR"] = args.eval_dir
     (
@@ -52,7 +51,8 @@ def play(args):
     ) = args.block.split("_")
 
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
-    env_cfg.terrain.map_path = args.map
+    if isinstance(env_cfg, AliengoNavCfg):
+        env_cfg.terrain.map_path = args.map
     env_cfg.terrain.no_blocks = args.no_blocks
     if args.alt_ckpt != "":
         loaded_dict = torch.load(args.alt_ckpt, map_location="cpu")
