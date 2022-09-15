@@ -101,6 +101,8 @@ class Terrain:
         if self.type == "trimesh":
             if cfg.map_path:
                 hscale, vscale = 0.4, 4
+                if os.environ["ISAAC_LOWER_WALLS"] != "-1":
+                    vscale = float(os.environ["ISAAC_LOWER_WALLS"])
             else:
                 hscale, vscale = 1, 1
             (
