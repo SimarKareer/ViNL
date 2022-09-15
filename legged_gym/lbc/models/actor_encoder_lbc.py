@@ -187,8 +187,10 @@ class Actor(nn.Module):
         )
 
     def act(self, proprio, enc_depth_map, **kwargs):
-        observations = torch.cat((proprio, enc_depth_map), dim=-1)
-
+        if os.environ["ISAAC_BLIND"] != "True":
+            observations = torch.cat((proprio, enc_depth_map), dim=-1)
+        else:
+            observations = proprio
         self.update_distribution(observations)
         return self.distribution.sample()
 
