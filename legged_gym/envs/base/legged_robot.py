@@ -371,9 +371,14 @@ class LeggedRobot(BaseTask):
 
         # add noise if needed
         if self.add_noise:
-            self.obs_buf += (
-                2 * torch.rand_like(self.obs_buf) - 1
-            ) * self.noise_scale_vec
+            if os.environ["ISAAC_BLIND"] != "True":
+                self.obs_buf += (
+                    2 * torch.rand_like(self.obs_buf) - 1
+                ) * self.noise_scale_vec
+            else:
+                self.obs_buf += (
+                    2 * torch.rand_like(self.obs_buf) - 1
+                ) * self.noise_scale_vec[:-self.measured_heights.shape[1]]
 
     def create_sim(self):
         """Creates simulation, terrain and evironments"""
