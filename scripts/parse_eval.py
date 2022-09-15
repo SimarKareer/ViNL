@@ -13,12 +13,7 @@ METRICS = [
     "success",
     "num_steps",
 ]
-KEYS = [
-    "map_name",
-    "episode_id",
-    "seed",
-    "attempt",
-] + METRICS
+KEYS = ["map_name", "episode_id", "seed", "attempt"] + METRICS
 
 
 def main(eval_dir):
@@ -39,12 +34,15 @@ def main(eval_dir):
             data_dict[k].append(v)
     print(f"Num episodes: {len(data_dict['map_name'])}")
 
+    # Convert dict to pandas dataframe
     df = pd.DataFrame.from_dict(data_dict)
+
+    # Group by seed (attempt) and get mean and std of mean across attempts
     num_attempts = max(df["attempt"]) + 1
     aggregated_stats = {k: [] for k in METRICS[:num_metrics]}
     for idx in range(int(num_attempts)):
+        filtered_df = df[df["attempt"] == idx]
         for k in METRICS[:num_metrics]:
-            filtered_df = df[df["attempt"] == idx]
             aggregated_stats[k].append(np.mean(filtered_df[k]))
 
     row = ""
