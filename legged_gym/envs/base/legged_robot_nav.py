@@ -50,7 +50,6 @@ from legged_gym.envs.base.legged_robot import LeggedRobot
 SHOW = False
 PRINT_RT = False
 SUCCESS_RADIUS = 0.3235
-WRITE = True
 
 
 def wrap_heading(heading):
@@ -145,7 +144,7 @@ class LeggedRobotNav(LeggedRobot):
                 str_data += f"{k}: {v:.3f}\n"
             print("Nav episode final stats:\n", str_data)
 
-            if WRITE:
+            if os.environ["ISAAC_WRITE"] == "True":
                 eval_dir = os.environ["ISAAC_EVAL_DIR"]
                 os.makedirs(eval_dir, exist_ok=True)
                 map_name = os.environ["ISAAC_MAP_NAME"]

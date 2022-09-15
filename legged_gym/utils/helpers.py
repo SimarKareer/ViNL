@@ -286,6 +286,11 @@ def get_args():
             "action": "store_true",
             "help": "Use an MLP not an RNN.",
         },
+        {
+            "name": "--no-write",
+            "action": "store_true",
+            "help": "Don't write jsons for evaluation of nav.",
+        },
     ]
     # parse arguments
     args = gymutil.parse_arguments(
@@ -294,6 +299,7 @@ def get_args():
 
     # Environ hacks
     os.environ["ISAAC_NO_RNN"] = "True" if args.no_rnn else "False"
+    os.environ["ISAAC_WRITE"] = "True" if not args.no_write else "False"
 
     # name allignment
     args.sim_device_id = args.compute_device_id
