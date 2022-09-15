@@ -57,6 +57,7 @@ class AliengoNavCfg(LeggedRobotCfg):
         terrain_proportions = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         mesh_type = "trimesh"
         map_path = None  # gets overwritten in play.py
+        no_blocks = False
 
     class init_state(LeggedRobotCfg.init_state):
         pos = [0.0, 0.0, 0.38]  # x,y,z [m]

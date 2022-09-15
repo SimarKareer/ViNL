@@ -53,6 +53,7 @@ def play(args):
 
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     env_cfg.terrain.map_path = args.map
+    env_cfg.terrain.no_blocks = args.no_blocks
     if args.alt_ckpt != "":
         loaded_dict = torch.load(args.alt_ckpt, map_location="cpu")
         if "model_state_dict" not in loaded_dict:

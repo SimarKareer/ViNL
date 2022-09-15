@@ -114,8 +114,9 @@ class Terrain:
             )
             if cfg.map_path:
                 self.set_start_goal()
-                # Add small blocks on the ground
-                self.add_blocks()
+                if not getattr(cfg, "no_blocks", False):
+                    # Add small blocks on the ground
+                    self.add_blocks()
 
     def randomized_terrain(self):
         for k in range(self.cfg.num_sub_terrains):
