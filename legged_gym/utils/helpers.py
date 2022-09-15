@@ -306,7 +306,7 @@ def get_args():
     # Environ hacks
     os.environ["ISAAC_NO_RNN"] = "True" if args.no_rnn else "False"
     os.environ["ISAAC_WRITE"] = "True" if not args.no_write else "False"
-    os.environ["ISAAC_LOWER_WALLS"] = str(args.lower_walls)
+    os.environ["ISAAC_LOWER_WALLS"] = str(args.wall_scale)
 
     # name allignment
     args.sim_device_id = args.compute_device_id
