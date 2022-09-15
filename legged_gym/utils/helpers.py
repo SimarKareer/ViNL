@@ -297,6 +297,12 @@ def get_args():
             "help": "Scale factor for wall height.",
             "default": -1,
         },
+        {
+            "name": "--hor-scale",
+            "type": float,
+            "help": "Scale factor for horizontal axes.",
+            "default": -1,
+        },
     ]
     # parse arguments
     args = gymutil.parse_arguments(
@@ -306,7 +312,8 @@ def get_args():
     # Environ hacks
     os.environ["ISAAC_NO_RNN"] = "True" if args.no_rnn else "False"
     os.environ["ISAAC_WRITE"] = "True" if not args.no_write else "False"
-    os.environ["ISAAC_LOWER_WALLS"] = str(args.wall_scale)
+    os.environ["ISAAC_WALL_SCALE"] = str(args.wall_scale)
+    os.environ["ISAAC_HOR_SCALE"] = str(args.hor_scale)
 
     # name allignment
     args.sim_device_id = args.compute_device_id
