@@ -17,7 +17,7 @@ KEYS = ["map_name", "episode_id", "seed", "attempt"] + METRICS
 
 
 def main(eval_dir):
-    nice_metrics = ["success", "feet_collisions_per_meter"]
+    nice_metrics = ["success", "dist_traveled", "feet_collisions_per_meter"]
     files = glob.glob(osp.join(eval_dir, "*.txt"))
     if files:
         file_parser, num_keys, num_metrics = parse_txt, len(KEYS) - 1, len(METRICS) - 1
@@ -25,7 +25,6 @@ def main(eval_dir):
         file_parser, num_keys, num_metrics = parse_json, len(KEYS), len(METRICS)
         files = glob.glob(osp.join(eval_dir, "*.json"))
         nice_metrics.append("feet_collisions_per_step")
-    nice_metrics.append("dist_traveled")
 
     data_dict = {k: [] for k in KEYS[:num_keys]}
     for file in files:
