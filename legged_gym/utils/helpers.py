@@ -276,11 +276,24 @@ def get_args():
             "help": "Range of heights blocks can be.",
             "default": "0.14_0.15",
         },
+        {
+            "name": "--no-blocks",
+            "action": "store_true",
+            "help": "Disables the addition of blocks to the nav map.",
+        },
+        {
+            "name": "--no-rnn",
+            "action": "store_true",
+            "help": "Use an MLP not an RNN.",
+        },
     ]
     # parse arguments
     args = gymutil.parse_arguments(
         description="RL Policy", custom_parameters=custom_parameters
     )
+
+    # Environ hacks
+    os.environ["ISAAC_NO_RNN"] = "True" if args.no_rnn else "False"
 
     # name allignment
     args.sim_device_id = args.compute_device_id

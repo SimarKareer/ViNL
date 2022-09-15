@@ -1,3 +1,5 @@
+import os
+
 import torch
 import torch.nn as nn
 from rsl_rl.modules.models.rnn_state_encoder import build_rnn_state_encoder
@@ -9,7 +11,13 @@ PROPRIO_SIZE = 48
 
 class CNNRNN(nn.Module):
     def __init__(
-        self, image_size, cnn_out_size, rnn_hidden_size, rnn_out_size, rnn_layers=2
+        self,
+        image_size,
+        cnn_out_size,
+        rnn_hidden_size,
+        rnn_out_size,
+        rnn_layers=2,
+        no_rnn=False,
     ):
         super().__init__()
 
@@ -33,6 +41,14 @@ class CNNRNN(nn.Module):
         self.rnn_hidden_size = rnn_hidden_size
         self.hidden_state = None
 
+        # Add support for NOT using RNN
+        if no_rnn:
+            input_size = cnn_out_size + PROPRIO_SIZE
+            hidden_sizes = rnn_layers * [rnn_hidden_size]
+            self.mlp = construct_mlp_base(input_size, hidden_sizes)
+        else:
+            self.mlp = None
+
     def forward(self, observations, masks):
         if isinstance(observations, torch.Tensor):
             observations = observations[:, :-1]
@@ -50,9 +66,12 @@ class CNNRNN(nn.Module):
             raise RuntimeError(f"Obs type {type(observations)} invalid!")
         image_enc = self.cnn({"depth": images})
         rnn_input = torch.cat([image_enc, prop], dim=-1)
-        masks = masks.cuda()
-        out, self.hidden_state = self.rnn.forward(rnn_input, self.hidden_state, masks)
-        self.hidden_state = self.hidden_state.detach()
+        if self.mlp is None:
+            masks = masks.cuda()
+            out, self.hidden_state = self.rnn.forward(rnn_input, self.hidden_state, masks)
+            self.hidden_state = self.hidden_state.detach()
+        else:
+            out = self.mlp(rnn_input)
 
         return self.rnn_linear(out)
 
@@ -66,8 +85,9 @@ class VisionEncoder(nn.Module):
         rnn_out_size=32,
     ):
         super(VisionEncoder, self).__init__()
+        no_rnn = os.environ.get("ISAAC_NO_RNN", "False") == "True"
         self.encoder = CNNRNN(
-            image_size, cnn_output_size, rnn_hidden_size, rnn_out_size
+            image_size, cnn_output_size, rnn_hidden_size, rnn_out_size, no_rnn=no_rnn
         )
         print(f"(Student) ENCODER MLP: {self.encoder}")
 
@@ -200,3 +220,17 @@ def get_activation(act_name):
     else:
         print("invalid activation function!")
         return None
+
+
+def construct_mlp_base(input_size, hidden_sizes):
+    layers = []
+    prev_size = input_size
+    for out_size in hidden_sizes:
+        layers.append(
+            nn.Linear(int(prev_size), int(out_size))
+        )
+        layers.append(nn.ReLU())
+        prev_size = out_size
+    mlp = nn.Sequential(*layers) if len(layers) > 1 else layers[0]
+
+    return mlp
