@@ -49,6 +49,9 @@ def play(args):
         os.environ["ISAAC_BLOCK_MIN_HEIGHT"],
         os.environ["ISAAC_BLOCK_MAX_HEIGHT"],
     ) = args.block.split("_")
+    os.environ["ISAAC_WRITE"] = "True" if not args.no_write else "False"
+    os.environ["ISAAC_WALL_SCALE"] = str(args.wall_scale)
+    os.environ["ISAAC_HOR_SCALE"] = str(args.hor_scale)
 
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     if isinstance(env_cfg, AliengoNavCfg):
