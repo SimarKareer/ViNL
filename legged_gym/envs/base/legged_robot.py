@@ -295,8 +295,7 @@ class LeggedRobot(BaseTask):
             dim=-1,
         )
         # add perceptive inputs if not blind
-        heights = None
-        if self.cfg.terrain.measure_heights:
+        if self.cfg.terrain.measure_heights and os.environ["ISAAC_BLIND"] != "True":
             heights = (
                 torch.clip(
                     self.root_states[:, 2].unsqueeze(1) - 0.5 - self.measured_heights,
@@ -305,8 +304,6 @@ class LeggedRobot(BaseTask):
                 )
                 * self.obs_scales.height_measurements
             )
-
-        if heights is not None:
             self.obs_buf = torch.cat((self.obs_buf, heights), dim=-1)
 
         self.count += 1

@@ -303,6 +303,11 @@ def get_args():
             "help": "Scale factor for horizontal axes.",
             "default": -1,
         },
+        {
+            "name": "--blind",
+            "action": "store_true",
+            "help": "Don't vision or a map.",
+        },
     ]
     # parse arguments
     args = gymutil.parse_arguments(
@@ -311,6 +316,7 @@ def get_args():
 
     # Environ hacks
     os.environ["ISAAC_NO_RNN"] = "True" if args.no_rnn else "False"
+    os.environ["ISAAC_BLIND"] = "True" if args.blind else "False"
 
     # name allignment
     args.sim_device_id = args.compute_device_id
