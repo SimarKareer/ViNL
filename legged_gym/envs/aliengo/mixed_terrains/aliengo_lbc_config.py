@@ -148,8 +148,8 @@ class AliengoLbcCfgPPO(LeggedRobotCfgPPO):
         resume_path = ""
         # resume_path = "./logs/obs_aliengo/Apr07_12-17-33_NoObsRewards/model_3000.pt"
         # teacher_policy = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/rough_aliengo/Jul22_12-01-58_RoughTerrainDMEnc/model_1500.pt"
-        # teacher_policy = "weights/Sep11_21-26-00_ObsEncDM_model_1150_19.086456518173218.pt"
-        teacher_policy = "weights/Sep14_06-52-43_ObsEncDM_model_4250_16.138804819360374_trained_on_0.25.pt"
+        teacher_policy = "weights/Sep11_21-26-00_ObsEncDM_model_1150_19.086456518173218.pt"
+        # teacher_policy = "weights/Sep14_06-52-43_ObsEncDM_model_4250_16.138804819360374_trained_on_0.25.pt"
 
     class lbc(LeggedRobotCfgPPO.lbc):
         batch_size = 10
