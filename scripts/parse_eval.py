@@ -17,14 +17,16 @@ KEYS = ["map_name", "episode_id", "seed", "attempt"] + METRICS
 
 
 def main(eval_dir):
+    nice_metrics = ["success", "feet_collisions_per_meter"]
     files = glob.glob(osp.join(eval_dir, "*.txt"))
     if files:
         file_parser, num_keys, num_metrics = parse_txt, len(KEYS) - 1, len(METRICS) - 1
-        nice_metrics = ["success", "feet_collisions_per_meter"]
     else:
         file_parser, num_keys, num_metrics = parse_json, len(KEYS), len(METRICS)
         files = glob.glob(osp.join(eval_dir, "*.json"))
-        nice_metrics = ["success", "feet_collisions_per_step"]
+        nice_metrics.append("feet_collisions_per_step")
+    nice_metrics.append("dist_traveled")
+
     data_dict = {k: [] for k in KEYS[:num_keys]}
     for file in files:
         data = file_parser(file)
@@ -54,19 +56,18 @@ def main(eval_dir):
             )
 
     row = ""
+    latex_row = ""
     for m in nice_metrics:
-        if m in ["success", "feet_collisions_per_step"]:
-            row += (
-                f"{np.mean(aggregated_stats[m])*100:.2f} "
-                f"$\pm$ {np.std(aggregated_stats[m])*100:.2f} & "
-            )
-        else:
-            row += (
-                f"{np.mean(aggregated_stats[m]):.2f} "
-                f"$\pm$ {np.std(aggregated_stats[m]):.2f} & "
-            )
+        scale = 100 if m in ["success", "feet_collisions_per_step"] else 1
+        latex_str = (
+            f"{np.mean(aggregated_stats[m])*scale:.2f} "
+            f"$\pm$ {np.std(aggregated_stats[m])*scale:.2f} & "
+        )
+        latex_row += latex_str
+        if m != "dist_traveled":  # Don't care about dist for Google Sheet
+            row += latex_str
     print("\t".join(nice_metrics))
-    print(row[:-2] + "\\\\")
+    print(latex_row[:-2] + "\\\\")
     print(row[:-2].replace(" $\pm$ ", "+-").replace(" & ", "\t"))
 
 
