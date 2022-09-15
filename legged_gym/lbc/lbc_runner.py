@@ -1,14 +1,16 @@
+import os
+import statistics
+import time
+from collections import deque
+
+import torch
+from pytorch_memlab import MemReporter
+from torch.utils.tensorboard import SummaryWriter
+
 from legged_gym.lbc.algorithms.lbc import LBC
 from legged_gym.lbc.models.actor_encoder_lbc import Actor, VisionEncoder
-from rsl_rl.modules.actor_critic import DmEncoder
-from torch.utils.tensorboard import SummaryWriter
-import torch
-from collections import deque
-import statistics
-import os
 from rsl_rl.env import VecEnv
-from pytorch_memlab import MemReporter
-import time
+from rsl_rl.modules.actor_critic import DmEncoder
 
 
 class LbcRunner:
@@ -22,28 +24,39 @@ class LbcRunner:
         self.env = env
         envcfg = self.env.cfg
 
+        alt_ckpt = train_cfg["runner"].get("alt_ckpt", None)
+        self.use_dm = alt_ckpt is not None and alt_ckpt != ""
+
         enc_hidden_dims = train_cfg["obsSize"]["encoder_hidden_dims"]
         num_dm_encoder_obs = train_cfg["obsSize"]["num_dm_encoder_obs"]
 
-        num_actor_obs = (
-            envcfg.env.num_proprio_obs + train_cfg["obsSize"]["cnn_out_size"]
-        )
+        if os.environ["ISAAC_BLIND"] == "True":
+            num_actor_obs = envcfg.env.num_proprio_obs
+        else:
+            num_actor_obs = (
+                envcfg.env.num_proprio_obs + train_cfg["obsSize"]["cnn_out_size"]
+            )
 
         actor = Actor(num_actor_obs, self.env.num_actions).to(self.device)
-        actorDict = torch.load(train_cfg["runner"]["teacher_policy"])[
-            "model_state_dict"
-        ]
-        actor.load_state_dict(actorDict, strict=False)
-
         vision_encoder = VisionEncoder()
         dm_encoder = DmEncoder(num_dm_encoder_obs, enc_hidden_dims)
-        dmDict = torch.load(train_cfg["runner"]["teacher_policy"])["model_state_dict"]
-        newDmDict = {}
-        for k, v in dmDict.items():
-            if "encoder" in k:
-                newk = k[8:]
-                newDmDict[newk] = v
-        dm_encoder.load_state_dict(newDmDict)
+
+        if not (alt_ckpt is not None and alt_ckpt != ""):
+            actorDict = torch.load(train_cfg["runner"]["teacher_policy"])[
+                "model_state_dict"
+            ]
+
+            dmDict = torch.load(train_cfg["runner"]["teacher_policy"])[
+                "model_state_dict"
+            ]
+            newDmDict = {}
+            for k, v in dmDict.items():
+                if "encoder" in k:
+                    newk = k[8:]
+                    newDmDict[newk] = v
+
+            actor.load_state_dict(actorDict, strict=False)
+            dm_encoder.load_state_dict(newDmDict)
 
         self.alg = LBC(
             actor,
@@ -52,7 +65,7 @@ class LbcRunner:
             device="cuda",
             learning_rate=1e-4,
             kin_nav_policy=train_cfg["runner"].get("kin_nav_policy", None),
-            alt_ckpt=train_cfg["runner"].get("alt_ckpt", None),
+            alt_ckpt=alt_ckpt,
         )
         self.save_interval = self.cfg["save_interval"]
 
@@ -144,8 +157,7 @@ class LbcRunner:
                 self.save(
                     os.path.join(
                         self.log_dir,
-                        f"model_{it}"
-                        f"_{self.latest_mean_rew}.pt",
+                        f"model_{it}" f"_{self.latest_mean_rew}.pt",
                     )
                 )
             ep_infos.clear()
@@ -221,7 +233,7 @@ class LbcRunner:
                 f"""{'Mean episode length:':>{pad}} {statistics.mean(locs['lenbuffer']):.2f}\n"""
                 f"""{'LBC Loss:':>{pad}} {locs['batch_loss']:.2f}\n"""
             )
-            self.latest_mean_rew = statistics.mean(locs['rewbuffer'])
+            self.latest_mean_rew = statistics.mean(locs["rewbuffer"])
         else:
             log_string = (
                 f"""{'#' * width}\n"""
@@ -256,17 +268,18 @@ class LbcRunner:
         )
 
     def load(self, path, load_optimizer=True):
-        loaded_dict = torch.load(path)
-        self.alg.actor.load_state_dict(loaded_dict["actor_state_dict"])
-        self.alg.vision_encoder.load_state_dict(
-            loaded_dict["vision_encoder_state_dict"]
-        )
-        self.alg.dm_encoder.load_state_dict(loaded_dict["dm_encoder_state_dict"])
+        if not self.use_dm:
+            loaded_dict = torch.load(path)
+            self.alg.actor.load_state_dict(loaded_dict["actor_state_dict"])
+            self.alg.vision_encoder.load_state_dict(
+                loaded_dict["vision_encoder_state_dict"]
+            )
+            self.alg.dm_encoder.load_state_dict(loaded_dict["dm_encoder_state_dict"])
 
-        if load_optimizer:
-            self.alg.optimizer.load_state_dict(loaded_dict["optimizer_state_dict"])
-        self.current_learning_iteration = loaded_dict["iter"]
-        return loaded_dict["infos"]
+            if load_optimizer:
+                self.alg.optimizer.load_state_dict(loaded_dict["optimizer_state_dict"])
+            self.current_learning_iteration = loaded_dict["iter"]
+            return loaded_dict["infos"]
 
     def get_inference_policy(self, device=None):
         self.alg.actor.eval()
