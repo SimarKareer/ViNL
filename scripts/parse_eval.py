@@ -26,16 +26,8 @@ def main(eval_dir):
         files = glob.glob(osp.join(eval_dir, "*.json"))
         nice_metrics.append("feet_collisions_per_step")
 
-    data_dict = {k: [] for k in KEYS[:num_keys]}
-    for file in files:
-        data = file_parser(file)
-        assert num_keys == len(data)
-        for k, v in zip(KEYS[:num_keys], data):
-            data_dict[k].append(v)
-    print(f"Num episodes: {len(data_dict['map_name'])}")
-
     # Convert dict to pandas dataframe
-    df = pd.DataFrame.from_dict(data_dict)
+    df = generate_df(files, num_keys=num_keys, parser_fn=file_parser)
 
     # Group by seed (attempt) and get mean and std of mean across attempts
     num_attempts = max(df["attempt"]) + 1
@@ -101,6 +93,20 @@ def parse_json(file):
     with open(file) as f:
         data = json.load(f)
     return [data[KEYS[0]]] + [float(data[k]) for k in KEYS[1:]]
+
+
+def generate_df(files, num_keys=len(KEYS), parser_fn=parse_json):
+    data_dict = {k: [] for k in KEYS[:num_keys]}
+    for file in files:
+        data = parser_fn(file)
+        assert num_keys == len(data)
+        for k, v in zip(KEYS[:num_keys], data):
+            data_dict[k].append(v)
+    print(f"Num episodes: {len(data_dict['map_name'])}")
+
+    # Convert dict to pandas dataframe
+    df = pd.DataFrame.from_dict(data_dict)
+    return df
 
 
 if __name__ == "__main__":
