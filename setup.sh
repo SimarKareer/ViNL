@@ -11,10 +11,11 @@ cd legged_gym && pip install -e . && cd - &&
 pip install pytorch-memlab &&
 
 # Habitat Lab installs
-cd habitat-lab && git checkout aliengoisaac &&
+cd habitat-lab &&
 pip install typing-extensions~=3.7.4 google-auth==1.6.3 simplejson braceexpand pybullet &&
 pip install -r requirements.txt &&
 python setup.py develop --all &&
+git checkout aliengoisaac &&
 conda install -c conda-forge bullet -y &&
 pip install squaternion &&
 cd - &&
