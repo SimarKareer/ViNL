@@ -58,7 +58,7 @@ class AliengoLbcCfg(LeggedRobotCfg):
 
     class terrain(LeggedRobotCfg.terrain):
         # terrain_proportions = [0.1, 0.1, 0.2, 0.2, 0.2, 0.2]
-        map_path = "resources/maps/map1.png"
+        # map_path = "resources/maps/map1.png"
         terrain_proportions = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         mesh_type = "trimesh"
 
@@ -124,8 +124,8 @@ class AliengoLbcCfg(LeggedRobotCfg):
         class ranges(LeggedRobotCfg.commands.ranges):
             lin_vel_x = [0.7, 1.0]  # min max [m/s]
             lin_vel_y = [0.0, 0.0]  # min max [m/s]
-            ang_vel_yaw = [-1.0, 1.0]  # min max [rad/s]
-            heading = [-3.14, 3.14]
+            ang_vel_yaw = [0.0, 0.0]  # min max [rad/s]
+            heading = [0.0, 0.0]
 
     class noise(LeggedRobotCfg.noise):
         add_noise = False
@@ -144,7 +144,7 @@ class AliengoLbcCfgPPO(LeggedRobotCfgPPO):
         experiment_name = "lbc_aliengo"
         load_run = -1
         max_iterations = 10000  # number of policy updates
-        num_test_envs = 30
+        num_test_envs = 5
 
         resume = True
         resume_path = (

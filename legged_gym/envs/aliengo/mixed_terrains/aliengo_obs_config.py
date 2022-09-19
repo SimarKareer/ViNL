@@ -122,6 +122,8 @@ class AliengoObsCfg(LeggedRobotCfg):
             lin_vel_y = [0.0, 0.0]  # min max [m/s]
             ang_vel_yaw = [-1.0, 1.0]  # min max [rad/s]
             heading = [-3.14, 3.14]
+            # ang_vel_yaw = [0.0, 0.0]  # min max [rad/s]
+            # heading = [0.0, 0.0]
 
     class noise(LeggedRobotCfg.noise):
         add_noise = False
@@ -140,5 +142,6 @@ class AliengoObsCfgPPO(LeggedRobotCfgPPO):
         max_iterations = 3000  # number of policy updates
 
         resume = True
-        resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/rough_aliengo/Jul22_12-01-58_RoughTerrainDMEnc/model_1500.pt"
+        # resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/rough_aliengo/Jul22_12-01-58_RoughTerrainDMEnc/model_1500.pt"
         # resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Jul22_12-33-19_ObsEncDM/model_4500.pt"
+        resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Aug05_12-59-13_ObsEncDM/model_4500.pt"

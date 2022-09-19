@@ -48,70 +48,75 @@ from .mixed_terrains.aliengo_rough_config import AliengoRoughCfg
 class Aliengo(LeggedRobot):
     cfg: AliengoRoughCfg
 
+    def make_handle_trans(self, res, env_num, trans, rot):
+        # TODO Add camera sensors here?
+        camera_props = gymapi.CameraProperties()
+        # print("FOV: ", camera_props.horizontal_fov)
+        # camera_props.horizontal_fov = 75.0
+        # 1280 x 720
+        width, height = res
+        camera_props.width = width
+        camera_props.height = height
+        camera_props.enable_tensors = True
+        # print("envs[i]", self.envs[i])
+        # print("len envs: ", len(self.envs))
+        camera_handle = self.gym.create_camera_sensor(
+            self.envs[env_num], camera_props
+        )
+        # print("cam handle: ", camera_handle)
+
+        local_transform = gymapi.Transform()
+        # local_transform.p = gymapi.Vec3(75.0, 75.0, 30.0)
+        # local_transform.r = gymapi.Quat.from_euler_zyx(0, 3.14 / 2, 3.14)
+        x, y, z = trans
+        local_transform.p = gymapi.Vec3(x, y, z)
+        a, b, c = rot
+        local_transform.r = gymapi.Quat.from_euler_zyx(a, b, c)
+
+        return camera_handle, local_transform
+
     def __init__(self, cfg, sim_params, physics_engine, sim_device, headless, record=False):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
         self.camera_handles = []
+        self.camera_handles2 = []
 
-        print("ALIENGO INIT")
+        print("ALIENGONAV INIT")
+        
+        follow_cam, follow_trans = self.make_handle_trans((600, 400), 0, (1.0, -1.0, 0.0), (0.0, 0.0, 3*3.14/4))
+        self.follow_cam = follow_cam
+        body_handle = self.gym.find_actor_rigid_body_handle(
+            self.envs[0], self.actor_handles[0], "base"
+        )
+
+        self.gym.attach_camera_to_body(
+            follow_cam,  # camera_handle,
+            self.envs[0],
+            body_handle,
+            follow_trans,
+            gymapi.FOLLOW_POSITION,
+        )
 
         if cfg.env.train_type == "lbc":
-            print("INITIALIZING CAMERAS")
+            # print("INITIALIZING 2 CAMERAS")
             for i in range(self.num_envs):
-                # TODO Add camera sensors here?
-                camera_props = gymapi.CameraProperties()
-                # print("FOV: ", camera_props.horizontal_fov)
-                # camera_props.horizontal_fov = 75.0
-                # 1280 x 720
-                width, height = cfg.env.camera_res
-                camera_props.width = width
-                camera_props.height = height
-                camera_props.enable_tensors = True
-                # print("envs[i]", self.envs[i])
-                # print("len envs: ", len(self.envs))
-                camera_handle = self.gym.create_camera_sensor(
-                    self.envs[i], camera_props
-                )
-                # print("cam handle: ", camera_handle)
-                self.camera_handles.append(camera_handle)
+                
+                res = cfg.env.camera_res
+                cam1, trans1 = self.make_handle_trans(res, i, (0.35, 0.0, 0.0), (0.0, 3.14/6, 0))
+                
+                self.camera_handles.append(cam1)
 
-                local_transform = gymapi.Transform()
-                # local_transform.p = gymapi.Vec3(75.0, 75.0, 30.0)
-                # local_transform.r = gymapi.Quat.from_euler_zyx(0, 3.14 / 2, 3.14)
-                local_transform.p = gymapi.Vec3(0.35, 0.0, 0.0)
-                local_transform.r = gymapi.Quat.from_euler_zyx(0.0, 3.14/6, 0.0)
 
                 body_handle = self.gym.find_actor_rigid_body_handle(
                     self.envs[i], self.actor_handles[i], "base"
                 )
 
                 self.gym.attach_camera_to_body(
-                    camera_handle,  # camera_handle,
+                    cam1,  # camera_handle,
                     self.envs[i],
                     body_handle,
-                    local_transform,
+                    trans1,
                     gymapi.FOLLOW_TRANSFORM,
                 )
-
-            # self.gym.set_camera_transform(camera_handle, self.envs[i], local_transform)
-        # if record:
-        #     camera_props = gymapi.CameraProperties()
-        #     width, height = cfg.env.camera_res
-        #     camera_props.width = 128
-        #     camera_props.height = 128
-        #     # camera_props.enable_tensors = True
-        #     camera_handle = self.gym.create_camera_sensor(
-        #         self.envs[0], camera_props
-        #     )
-        #     print("CAM HANDLE: ", camera_handle)
-        #     self.camera_handles.append(camera_handle)
-
-        #     local_transform = gymapi.Transform()
-        #     local_transform.p = gymapi.Vec3(0.35, 0.0, 0.0)
-        #     local_transform.r = gymapi.Quat.from_euler_zyx(0.0, 0.0, 0.0)
-        # # load actuator network
-        # if self.cfg.control.use_actuator_network:
-        #     actuator_network_path = self.cfg.control.actuator_net_file.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
-        #     self.actuator_network = torch.jit.load(actuator_network_path).to(self.device)
 
     def reset_idx(self, env_ids):
         super().reset_idx(env_ids)

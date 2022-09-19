@@ -28,10 +28,10 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from isaacgym import gymapi
+from isaacgym import gymapi, gymtorch
 from legged_gym import LEGGED_GYM_ROOT_DIR
 import os
-
+from torchvision.utils import save_image
 import isaacgym
 from legged_gym.envs import *
 from legged_gym.utils import get_args, export_policy_as_jit, task_registry, Logger
@@ -40,6 +40,25 @@ import numpy as np
 import torch
 import pickle
 
+def manual_save_im(env, path):
+    env.gym.start_access_image_tensors(env.sim)
+    im = env.gym.get_camera_image_gpu_tensor(
+        env.sim,
+        env.envs[0],
+        # env.camera_handles2[1],
+        env.follow_cam,
+        gymapi.IMAGE_COLOR,
+    )
+    im = gymtorch.wrap_tensor(im)
+
+    trans_im = im.detach().clone()
+    trans_im = (trans_im[..., :3]).float() / 255
+    save_image(
+        trans_im.view((400, 600, 3)).permute(2, 0, 1).float(),
+        path,
+    )
+
+    env.gym.end_access_image_tensors(env.sim)
 
 def play(args):
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
@@ -114,23 +133,18 @@ def play(args):
         obs, _, rews, dones, infos = env.step(actions.detach())
 
         if RECORD_FRAMES:
-            if i % 2:
-                filename = os.path.join(
-                    # LEGGED_GYM_ROOT_DIR,
-                    "/home/simar/Projects/isaacVL/localDev/legged_gym",
-                    "logs",
-                    train_cfg.runner.experiment_name,
-                    "exported",
-                    "frames",
-                    f"{img_idx}.png",
-                )
-                # filename = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/exported/frames/1.png"
-                # print(filename)
-                # print("env viewer", env.viewer)
-                # print(env.camera_handles[0])
-                env.gym.write_viewer_image_to_file(env.viewer, filename)
-                # env.gym.write_camera_image_to_file(env.sim, env.camera_handles[0], gymapi.IMAGE_COLOR, filename)
-                img_idx += 1
+            filename = os.path.join(
+                # LEGGED_GYM_ROOT_DIR,
+                # "/home/simar/Projects/isaacVL/localDev/legged_gym",
+                "/home/naoki/gt/vl/legged_gym",
+                "logs",
+                train_cfg.runner.experiment_name,
+                "exported",
+                "frames",
+                f"{img_idx:04}.png",
+            )
+            manual_save_im(env, filename)
+            img_idx += 1
         if MOVE_CAMERA:
             camera_position += camera_vel * env.dt
             env.set_camera(camera_position, camera_position + camera_direction)
@@ -170,7 +184,7 @@ def play(args):
 
 if __name__ == "__main__":
     EXPORT_POLICY = False
-    RECORD_FRAMES = False
+    RECORD_FRAMES = True
     MOVE_CAMERA = False
     args = get_args()
     play(args)
