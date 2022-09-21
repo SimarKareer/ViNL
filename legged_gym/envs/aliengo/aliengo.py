@@ -28,27 +28,29 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from time import time
-import numpy as np
 import os
-
-from isaacgym.torch_utils import *
-from isaacgym import gymtorch, gymapi, gymutil
-
-import torch
+from time import time
 
 # from torch.tensor import Tensor
-from typing import Tuple, Dict
+from typing import Dict, Tuple
 
-from legged_gym.envs import LeggedRobot
+import numpy as np
+import torch
+from isaacgym.torch_utils import *
+
+from isaacgym import gymapi, gymtorch, gymutil
 from legged_gym import LEGGED_GYM_ROOT_DIR
+from legged_gym.envs import LeggedRobot
+
 from .mixed_terrains.aliengo_rough_config import AliengoRoughCfg
 
 
 class Aliengo(LeggedRobot):
     cfg: AliengoRoughCfg
 
-    def __init__(self, cfg, sim_params, physics_engine, sim_device, headless, record=False):
+    def __init__(
+        self, cfg, sim_params, physics_engine, sim_device, headless, record=False
+    ):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
         self.camera_handles = []
 
@@ -78,7 +80,7 @@ class Aliengo(LeggedRobot):
                 # local_transform.p = gymapi.Vec3(75.0, 75.0, 30.0)
                 # local_transform.r = gymapi.Quat.from_euler_zyx(0, 3.14 / 2, 3.14)
                 local_transform.p = gymapi.Vec3(0.35, 0.0, 0.0)
-                local_transform.r = gymapi.Quat.from_euler_zyx(0.0, 3.14/6, 0.0)
+                local_transform.r = gymapi.Quat.from_euler_zyx(0.0, 3.14 / 6, 0.0)
 
                 body_handle = self.gym.find_actor_rigid_body_handle(
                     self.envs[i], self.actor_handles[i], "base"
@@ -91,27 +93,6 @@ class Aliengo(LeggedRobot):
                     local_transform,
                     gymapi.FOLLOW_TRANSFORM,
                 )
-
-            # self.gym.set_camera_transform(camera_handle, self.envs[i], local_transform)
-        # if record:
-        #     camera_props = gymapi.CameraProperties()
-        #     width, height = cfg.env.camera_res
-        #     camera_props.width = 128
-        #     camera_props.height = 128
-        #     # camera_props.enable_tensors = True
-        #     camera_handle = self.gym.create_camera_sensor(
-        #         self.envs[0], camera_props
-        #     )
-        #     print("CAM HANDLE: ", camera_handle)
-        #     self.camera_handles.append(camera_handle)
-
-        #     local_transform = gymapi.Transform()
-        #     local_transform.p = gymapi.Vec3(0.35, 0.0, 0.0)
-        #     local_transform.r = gymapi.Quat.from_euler_zyx(0.0, 0.0, 0.0)
-        # # load actuator network
-        # if self.cfg.control.use_actuator_network:
-        #     actuator_network_path = self.cfg.control.actuator_net_file.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
-        #     self.actuator_network = torch.jit.load(actuator_network_path).to(self.device)
 
     def reset_idx(self, env_ids):
         super().reset_idx(env_ids)
