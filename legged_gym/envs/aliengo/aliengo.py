@@ -53,42 +53,40 @@ class Aliengo(LeggedRobot):
         self.camera_handles = []
 
         print("ALIENGO INIT")
+        follow_cam, follow_trans = self.make_handle_trans((1920, 1080), 0, (1.0, -1.0, 0.0), (0.0, 0.0, 3*3.14/4))
+        self.follow_cam = follow_cam
+        body_handle = self.gym.find_actor_rigid_body_handle(
+            self.envs[0], self.actor_handles[0], "base"
+        )
+
+        self.gym.attach_camera_to_body(
+            follow_cam,  # camera_handle,
+            self.envs[0],
+            body_handle,
+            follow_trans,
+            gymapi.FOLLOW_POSITION,
+        )
+
 
         if cfg.env.train_type == "lbc":
-            print("INITIALIZING CAMERAS")
+            # print("INITIALIZING 2 CAMERAS")
             for i in range(self.num_envs):
-                # TODO Add camera sensors here?
-                camera_props = gymapi.CameraProperties()
-                # print("FOV: ", camera_props.horizontal_fov)
-                # camera_props.horizontal_fov = 75.0
-                # 1280 x 720
-                width, height = cfg.env.camera_res
-                camera_props.width = width
-                camera_props.height = height
-                camera_props.enable_tensors = True
-                # print("envs[i]", self.envs[i])
-                # print("len envs: ", len(self.envs))
-                camera_handle = self.gym.create_camera_sensor(
-                    self.envs[i], camera_props
-                )
-                # print("cam handle: ", camera_handle)
-                self.camera_handles.append(camera_handle)
+                
+                res = cfg.env.camera_res
+                cam1, trans1 = self.make_handle_trans(res, i, (0.35, 0.0, 0.0), (0.0, 3.14/6, 0))
+                
+                self.camera_handles.append(cam1)
 
-                local_transform = gymapi.Transform()
-                # local_transform.p = gymapi.Vec3(75.0, 75.0, 30.0)
-                # local_transform.r = gymapi.Quat.from_euler_zyx(0, 3.14 / 2, 3.14)
-                local_transform.p = gymapi.Vec3(0.35, 0.0, 0.0)
-                local_transform.r = gymapi.Quat.from_euler_zyx(0.0, 3.14/6, 0.0)
 
                 body_handle = self.gym.find_actor_rigid_body_handle(
                     self.envs[i], self.actor_handles[i], "base"
                 )
 
                 self.gym.attach_camera_to_body(
-                    camera_handle,  # camera_handle,
+                    cam1,  # camera_handle,
                     self.envs[i],
                     body_handle,
-                    local_transform,
+                    trans1,
                     gymapi.FOLLOW_TRANSFORM,
                 )
 

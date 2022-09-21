@@ -97,6 +97,35 @@ class LeggedRobot(BaseTask):
         )
         self.first_iter = True
 
+    def make_handle_trans(self, res, env_num, trans, rot, hfov=None):
+        # TODO Add camera sensors here?
+        camera_props = gymapi.CameraProperties()
+        # print("FOV: ", camera_props.horizontal_fov)
+        # camera_props.horizontal_fov = 75.0
+        # 1280 x 720
+        width, height = res
+        camera_props.width = width
+        camera_props.height = height
+        camera_props.enable_tensors = True
+        if hfov is not None:
+            camera_props.horizontal_fov = hfov
+        # print("envs[i]", self.envs[i])
+        # print("len envs: ", len(self.envs))
+        camera_handle = self.gym.create_camera_sensor(
+            self.envs[env_num], camera_props
+        )
+        # print("cam handle: ", camera_handle)
+
+        local_transform = gymapi.Transform()
+        # local_transform.p = gymapi.Vec3(75.0, 75.0, 30.0)
+        # local_transform.r = gymapi.Quat.from_euler_zyx(0, 3.14 / 2, 3.14)
+        x, y, z = trans
+        local_transform.p = gymapi.Vec3(x, y, z)
+        a, b, c = rot
+        local_transform.r = gymapi.Quat.from_euler_zyx(a, b, c)
+
+        return camera_handle, local_transform
+
     def step(self, actions):
         """Apply actions, simulate, call self.post_physics_step()
 
