@@ -81,19 +81,40 @@ class AliengoNav(AlienGoCameraMixin, LeggedRobotNav):
 
     def step(self, actions):
         ret = super().step(actions)
-        if self.floating_cam is not None:
-            if not self.floating_cam_moved:
-                x0, y0, x1, y1 = [
-                    float(i) for i in os.environ["isaac_bounds"].split("_")
-                ]
-                midpoint = (np.array([x0, y0]) + np.array([x1, y1])) / 2
-                camera_target = gymapi.Vec3(*midpoint, 0)
-                camera_position = camera_target + gymapi.Vec3(1, 1, 15)
+
+        if self.follow_cam is not None:
+            self.gym.start_access_image_tensors(self.sim)
+            image = gymtorch.wrap_tensor(
+                self.gym.get_camera_image_gpu_tensor(
+                    self.sim,
+                    self.envs[0],
+                    self.follow_cam,
+                    gymapi.IMAGE_COLOR,
+                )
+            )
+            self.gym.end_access_image_tensors(self.sim)
+            img = cv2.cvtColor(image.cpu().numpy(), cv2.COLOR_RGB2BGR)
+            cv2.imshow("Follow camera", img)
+            cv2.waitKey(1)
+
+        if not self.floating_cam_moved:
+            x0, y0, x1, y1 = [
+                float(i) for i in os.environ["isaac_bounds"].split("_")
+            ]
+            midpoint = (np.array([x0, y0]) + np.array([x1, y1])) / 2
+            camera_target = gymapi.Vec3(*midpoint, 0)
+            camera_position = camera_target + gymapi.Vec3(1, 1, 15)
+            if not self.headless:
+                self.gym.viewer_camera_look_at(
+                    self.viewer, None, camera_position, camera_target
+                )
+            if self.floating_cam is not None:
                 self.gym.set_camera_location(
                     self.floating_cam, self.envs[0], camera_position, camera_target
                 )
-                self.floating_cam_moved = True
+            self.floating_cam_moved = True
 
+        if self.floating_cam is not None:
             self.gym.start_access_image_tensors(self.sim)
             image = gymtorch.wrap_tensor(
                 self.gym.get_camera_image_gpu_tensor(
@@ -107,6 +128,7 @@ class AliengoNav(AlienGoCameraMixin, LeggedRobotNav):
             img = cv2.cvtColor(image.cpu().numpy(), cv2.COLOR_RGB2BGR)
             cv2.imshow("Floating camera", img)
             cv2.waitKey(1)
+
         return ret
 
     def reset_idx(self, env_ids):
