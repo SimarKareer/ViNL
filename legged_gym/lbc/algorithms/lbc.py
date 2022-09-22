@@ -75,7 +75,7 @@ class LBC:
             print("Loading DM baseline:", alt_ckpt)
             loaded_dict = torch.load(alt_ckpt, map_location="cuda")
             encoder_weights = {
-                k[len("encoder."):]: v
+                k[len("encoder.") :]: v
                 for k, v in loaded_dict["model_state_dict"].items()
                 if k.startswith("encoder.")
             }
