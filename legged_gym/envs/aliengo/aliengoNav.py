@@ -27,75 +27,87 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
+import os
 
+import cv2
 import numpy as np
 import torch
-from isaacgym import gymapi, gymtorch, gymutil
 
+from isaacgym import gymapi, gymtorch
 from legged_gym.envs.base.legged_robot_nav import LeggedRobotNav
 
+from .aliengo import AlienGoCameraMixin
 from .mixed_terrains.aliengo_rough_config import AliengoRoughCfg
 
 
-class AliengoNav(LeggedRobotNav):
+class AliengoNav(AlienGoCameraMixin, LeggedRobotNav):
     cfg: AliengoRoughCfg
 
-    def make_handle_trans(self, cfg, angle, env_num, hfov=None):
-        camera_props = gymapi.CameraProperties()
-        if hfov is not None:
-            camera_props.horizontal_fov = hfov
-        # 1280 x 720
-        width, height = cfg.env.camera_res
-        camera_props.width = width
-        camera_props.height = height
-        camera_props.enable_tensors = True
-        # print("envs[i]", self.envs[i])
-        # print("len envs: ", len(self.envs))
-        camera_handle = self.gym.create_camera_sensor(
-            self.envs[env_num], camera_props
-        )
-        # print("cam handle: ", camera_handle)
-
-        local_transform = gymapi.Transform()
-        # local_transform.p = gymapi.Vec3(75.0, 75.0, 30.0)
-        # local_transform.r = gymapi.Quat.from_euler_zyx(0, 3.14 / 2, 3.14)
-        local_transform.p = gymapi.Vec3(0.35, 0.0, 0.0)
-        local_transform.r = gymapi.Quat.from_euler_zyx(0.0, angle, 0.0)
-
-        return camera_handle, local_transform
-
-    def __init__(self, cfg, sim_params, physics_engine, sim_device, headless, record=False):
+    def __init__(
+        self, cfg, sim_params, physics_engine, sim_device, headless, record=False
+    ):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
         self.camera_handles = []
 
+        width, height = cfg.env.camera_res
+        trans = (0.35, 0.0, 0.0)
         if cfg.env.train_type == "lbc":
-            for i in range(self.num_envs):
+            for env_idx in range(self.num_envs):
+                cam1, trans1 = self.make_handle_trans(
+                    width, height, env_idx, trans, (0.0, np.deg2rad(30), 0.0)
+                )
+                cam2, trans2 = self.make_handle_trans(
+                    width, height, env_idx, trans, (0.0, np.deg2rad(-15), 0.0), hfov=70
+                )
 
-                cam1, trans1 = self.make_handle_trans(cfg, np.deg2rad(30), i)
-                cam2, trans2 = self.make_handle_trans(cfg, np.deg2rad(-15), i, hfov=70)
-                
                 self.camera_handles.append(cam1)
                 self.camera_handles.append(cam2)
 
                 body_handle = self.gym.find_actor_rigid_body_handle(
-                    self.envs[i], self.actor_handles[i], "base"
+                    self.envs[env_idx], self.actor_handles[env_idx], "base"
                 )
 
-                self.gym.attach_camera_to_body(
-                    cam1,  # camera_handle,
-                    self.envs[i],
-                    body_handle,
-                    trans1,
-                    gymapi.FOLLOW_TRANSFORM,
-                )
+                for c, t in ([cam1, trans1], [cam2, trans2]):
+                    self.gym.attach_camera_to_body(
+                        c,  # camera_handle,
+                        self.envs[env_idx],
+                        body_handle,
+                        t,
+                        gymapi.FOLLOW_TRANSFORM,
+                    )
 
-                self.gym.attach_camera_to_body(
-                    cam2,  # camera_handle,
-                    self.envs[i],
-                    body_handle,
-                    trans2,
-                    gymapi.FOLLOW_TRANSFORM,
+        self.init_aux_cameras()
+        self.floating_cam_moved = False
+
+    def step(self, actions):
+        ret = super().step(actions)
+        if self.floating_cam is not None:
+            if not self.floating_cam_moved:
+                x0, y0, x1, y1 = [
+                    float(i) for i in os.environ["isaac_bounds"].split("_")
+                ]
+                midpoint = (np.array([x0, y0]) + np.array([x1, y1])) / 2
+                camera_target = gymapi.Vec3(*midpoint, 0)
+                camera_position = camera_target + gymapi.Vec3(1, 1, 15)
+                self.gym.set_camera_location(
+                    self.floating_cam, self.envs[0], camera_position, camera_target
                 )
+                self.floating_cam_moved = True
+
+            self.gym.start_access_image_tensors(self.sim)
+            image = gymtorch.wrap_tensor(
+                self.gym.get_camera_image_gpu_tensor(
+                    self.sim,
+                    self.envs[0],
+                    self.floating_cam,
+                    gymapi.IMAGE_COLOR,
+                )
+            )
+            self.gym.end_access_image_tensors(self.sim)
+            img = cv2.cvtColor(image.cpu().numpy(), cv2.COLOR_RGB2BGR)
+            cv2.imshow("Floating camera", img)
+            cv2.waitKey(1)
+        return ret
 
     def reset_idx(self, env_ids):
         super().reset_idx(env_ids)

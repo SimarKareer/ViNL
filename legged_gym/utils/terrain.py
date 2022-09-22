@@ -305,6 +305,16 @@ class Terrain:
 
         os.environ["isaac_episode"] = "_".join([str(i) for i in [*start, *goal]])
 
+        # Save info about terrain boundaries for floating camera placement
+        x0, x1, y0, y1 = self.get_terrain_bounds()
+        coors = [
+            np.array(
+                [-(89.9 * 250 / 900) + i[0], -(89.9 * 250 / 900) + i[1]]
+            )
+            for i in [(x0, y0), (x1, y1)]
+        ]
+        os.environ["isaac_bounds"] = "_".join([str(i) for i in [*coors[0], *coors[1]]])
+
     def generate_episode(self):
         x0, x1, y0, y1 = self.get_terrain_bounds()
         print("Map bounds: ", x0, x1, y0, y1)
