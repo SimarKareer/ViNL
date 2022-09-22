@@ -287,15 +287,18 @@ class Terrain:
             start = np.array(start_goal[:2])
             goal = np.array(start_goal[2:4])
 
+        scale = float(os.environ["ISAAC_HOR_SCALE"])
+        scale = 1 if scale == -1 else scale / 0.4
+        start = start * scale
+        goal = goal * scale
+
         self.terrain_start = start.copy()
         self.terrain_goal = goal.copy()
 
         # Convert coordinates to be proper terrain coordinates ("global")
-        scale = float(os.environ["ISAAC_HOR_SCALE"])
-        scale = 1 if scale == -1 else scale / 0.4
         start, goal = [
             np.array(
-                [-(89.9 * 250 / 900) + i[0] * scale, -(89.9 * 250 / 900) + i[1] * scale]
+                [-(89.9 * 250 / 900) + i[0], -(89.9 * 250 / 900) + i[1]]
             )
             for i in [start, goal]
         ]
