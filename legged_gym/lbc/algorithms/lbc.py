@@ -155,7 +155,7 @@ class LBC:
         )
 
         with torch.no_grad():
-            actions = self.actor.act_inference(prop, extero_encoding)
+            actions = self.actor.act(prop, extero_encoding)
 
         return actions
 
