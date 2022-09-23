@@ -379,6 +379,7 @@ class LeggedRobotNav(LeggedRobot):
                 for i in (level_image, tilted_image)
             ]
             cv2.imshow("", np.hstack(imgs))
+            # cv2.imwrite("images/images.png", np.hstack(imgs))
             cv2.waitKey(1)
 
     def get_images(self):

@@ -178,7 +178,7 @@ class LBC:
         )
 
         with torch.no_grad():
-            actions = self.actor.act(prop, extero_encoding)
+            actions = self.actor.act_inference(prop, extero_encoding)
 
         return actions
 
@@ -211,12 +211,10 @@ class LBC:
             self.ang_vel = ang_dist / (NAV_INTERVAL / 50.0)
 
             print(self.lin_vel, self.ang_vel)
-            if self.lin_vel > 0.1:
-                self.ang_vel = 0
-            self.lin_vel = self.intensify(self.lin_vel, 0.6, 0.1)
-            self.ang_vel = self.intensify(self.ang_vel, 0.8, 0.1)
+            if self.ang_vel > 0.5 or self.ang_vel < -0.5:
+                self.lin_vel = 0.3
 
-            print(self.lin_vel, self.ang_vel)
+            print("LIN VEL ANG VEL: ", self.lin_vel, self.ang_vel)
             print("-"*100)
 
             if PRINT_RT:

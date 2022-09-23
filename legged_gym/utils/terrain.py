@@ -85,42 +85,92 @@ class Terrain:
         self.height_field_raw = np.zeros((self.tot_rows, self.tot_cols), dtype=np.int16)
         self.terrain_start = None
         if cfg.map_path:
-            im = np.array(imageio.v2.imread(cfg.map_path))
+            hscale = 0.4
+            if os.environ["ISAAC_HOR_SCALE"] != "-1":
+                hscale = float(os.environ["ISAAC_HOR_SCALE"])
+            self.cfg.horizontal_scale *= hscale
+
+
+            # self.curiculum(diff=1.0, obs_scale=2)
+            self.height_field_raw = self.block_terrain(1000)
+
+            im = np.array(imageio.v2.imread(cfg.map_path), dtype=np.int16)
             im = im[:, :, 3]
             scaled_im = im.repeat(3, axis=0).repeat(3, axis=1)
-            self.height_field_raw = to_shape(scaled_im, (900, 900))
+            # scaled_im = im
+            wall_map = to_shape(scaled_im, (900, 900))
+            # print("wall map: ", wall_map)
+            # print("wall map: ", np.unique(wall_map), wall_map.shape)
+            # print("wall map 50: ", np.unique(wall_map*), (wall_map*50).shape)
+            # print("heightfield: ", np.unique(self.height_field_raw), self.height_field_raw.shape)
+            
+            self.height_field_raw = (self.height_field_raw).astype(np.int16)# + wall_map*20
+            self.heightsamples = self.height_field_raw.copy()
+            self.height_field_raw += wall_map*20
+            # print("post heightfield: ", np.unique(self.height_field_raw), self.height_field_raw.shape)
+
+            # print("height field sum", self.height_field_raw.sum())
+            # self.selected_terrain()
+            # self.static()
+
 
         elif cfg.curriculum:
             self.curiculum()
+            self.heightsamples = self.height_field_raw
         elif cfg.selected:
             self.selected_terrain()
+            self.heightsamples = self.height_field_raw
         else:
             self.randomized_terrain()
+            self.heightsamples = self.height_field_raw
 
-        self.heightsamples = self.height_field_raw
+        # self.heightsamples = self.height_field_raw
         if self.type == "trimesh":
-            if cfg.map_path:
-                hscale, vscale = 0.4, 4
-                if os.environ["ISAAC_WALL_SCALE"] != "-1":
-                    vscale = float(os.environ["ISAAC_WALL_SCALE"])
-                if os.environ["ISAAC_HOR_SCALE"] != "-1":
-                    hscale = float(os.environ["ISAAC_HOR_SCALE"])
-            else:
-                hscale, vscale = 1, 1
+            # if cfg.map_path:
+                # hscale, vscale = 0.4, 4
+                # hscale = 0.4
+                # if os.environ["ISAAC_WALL_SCALE"] != "-1":
+                #     vscale = float(os.environ["ISAAC_WALL_SCALE"])
+                # if os.environ["ISAAC_HOR_SCALE"] != "-1":
+                    # hscale = float(os.environ["ISAAC_HOR_SCALE"])
+            # else:
+                # hscale, vscale = 1, 1
+                # hscale = 1
+            # hscale, vscale = 1, 1
+            # vscale=0.1
             (
                 self.vertices,
                 self.triangles,
             ) = terrain_utils.convert_heightfield_to_trimesh(
                 self.height_field_raw,
-                self.cfg.horizontal_scale * hscale,
-                self.cfg.vertical_scale * vscale,
+                self.cfg.horizontal_scale,# * hscale,
+                self.cfg.vertical_scale,# * vscale,
                 self.cfg.slope_treshold,
             )
             if cfg.map_path:
                 self.set_start_goal()
-                if not getattr(cfg, "no_blocks", False):
-                    # Add small blocks on the ground
-                    self.add_blocks()
+            #     if not getattr(cfg, "no_blocks", False):
+            #         # Add small blocks on the ground
+            #         self.add_blocks()
+            #         self.heightsamples = self.height_field_raw
+    
+    def block_terrain(self, num_blocks):
+        terrain = np.zeros((900, 900))
+        rng = np.random.default_rng(12345)
+        h, w = terrain.shape
+        xs = rng.integers(low=0, high=h, size=num_blocks)
+        ys = rng.integers(low=0, high=w, size=num_blocks)
+
+        for i in range(len(xs)):
+            width = np.random.choice([2, 3, 4, 5]) * 3
+            x, y = xs[i], ys[i]
+            if np.random.choice([0, 1]) == 1:
+                terrain[x:x+width, y:y+3] = 25
+            else:
+                terrain[x:x+3, y:y+width] = 25
+
+        return terrain
+
 
     def randomized_terrain(self):
         for k in range(self.cfg.num_sub_terrains):
@@ -132,7 +182,7 @@ class Terrain:
             terrain = self.make_terrain(choice, difficulty)
             self.add_terrain_to_map(terrain, i, j)
 
-    def curiculum(self):
+    def curiculum(self, diff=None, obs_scale=1):
         num_cols = (
             self.cfg.tot_cols if hasattr(self.cfg, "tot_cols") else self.cfg.num_cols
         )
@@ -141,10 +191,10 @@ class Terrain:
         )
         for j in range(num_cols):
             for i in range(num_rows):
-                difficulty = i / self.cfg.num_rows
+                difficulty = i / self.cfg.num_rows if diff is None else diff
                 choice = j / self.cfg.num_cols + 0.001
 
-                terrain = self.make_terrain(choice, difficulty)
+                terrain = self.make_terrain(choice, difficulty, obs_scale)
                 self.add_terrain_to_map(terrain, i, j)
 
     def selected_terrain(self):
@@ -164,7 +214,7 @@ class Terrain:
             eval(terrain_type)(terrain, **self.cfg.terrain_kwargs.terrain_kwargs)
             self.add_terrain_to_map(terrain, i, j)
 
-    def make_terrain(self, choice, difficulty):
+    def make_terrain(self, choice, difficulty, obs_scale=1):
         terrain = terrain_utils.SubTerrain(
             "terrain",
             width=self.width_per_env_pixels,
@@ -215,17 +265,22 @@ class Terrain:
                 platform_size=3.0,
             )
         elif choice < self.proportions[5]:
+            # print("MAKING TERRAIN HERE")
             num_rectangles = int(200 * difficulty)
-            rectangle_min_size = 2
-            rectangle_max_size = 5
+            # num_rectangles = 0
+            rectangle_min_size = 2 * obs_scale
+            rectangle_max_size = 5 * obs_scale
             terrain_utils.discrete_obstacles_terrain_cells(
                 terrain,
-                float(os.environ["ISAAC_BLOCK_MIN_HEIGHT"]),
-                float(os.environ["ISAAC_BLOCK_MAX_HEIGHT"]),
+                # float(os.environ["ISAAC_BLOCK_MIN_HEIGHT"]),
+                # float(os.environ["ISAAC_BLOCK_MAX_HEIGHT"]),
+                0.14,
+                0.15,
                 rectangle_min_size,
                 rectangle_max_size,
                 num_rectangles,
                 platform_size=3.0,
+                width = 2 * obs_scale
             )
         elif choice < self.proportions[6]:
             terrain_utils.stepping_stones_terrain(

@@ -139,9 +139,10 @@ class AliengoObsCfgPPO(LeggedRobotCfgPPO):
         experiment_name = "obs_aliengo"
         load_run = -1
         max_iterations = 6000  # number of policy updates
+        num_test_envs=1
 
         resume = True
         resume_path = (
-            "weights/Sep11_20-17-29_RoughTerrainDMEnc_model_4450_13.272511272532865.pt"
-            # "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Aug05_12-59-13_ObsEncDM/model_4500.pt"
+            # "weights/Sep11_20-17-29_RoughTerrainDMEnc_model_4450_13.272511272532865.pt"
+            "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Aug05_12-59-13_ObsEncDM/model_4500.pt"
         )

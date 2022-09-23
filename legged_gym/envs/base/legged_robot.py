@@ -334,6 +334,9 @@ class LeggedRobot(BaseTask):
                 * self.obs_scales.height_measurements
             )
             self.obs_buf = torch.cat((self.obs_buf, heights), dim=-1)
+            # print("processed_heights: ", torch.unique(heights))
+            # print("root states: ", self.root_states[:, 2].unsqueeze(1))
+            # print("uniq proc: ", torch.unique(self.root_states[:, 2].unsqueeze(1)))
 
         self.count += 1
         if self.cfg.env.train_type == "lbc":
@@ -1276,6 +1279,7 @@ class LeggedRobot(BaseTask):
             [type]: [description]
         """
         if self.cfg.terrain.mesh_type == "plane":
+            assert(False)
             return torch.zeros(
                 self.num_envs,
                 self.num_height_points,
@@ -1305,13 +1309,17 @@ class LeggedRobot(BaseTask):
         px = torch.clip(px, 0, self.height_samples.shape[0] - 2)
         py = torch.clip(py, 0, self.height_samples.shape[1] - 2)
 
+        # print("Unique heights: ", torch.unique(self.height_samples) * self.terrain.cfg.vertical_scale)
         heights1 = self.height_samples[px, py]
         heights2 = self.height_samples[px + 1, py]
         heights3 = self.height_samples[px, py + 1]
         heights = torch.min(heights1, heights2)
         heights = torch.min(heights, heights3)
 
-        return heights.view(self.num_envs, -1) * self.terrain.cfg.vertical_scale
+
+        heights = heights.view(self.num_envs, -1) * self.terrain.cfg.vertical_scale
+
+        return heights
 
     # ------------ reward functions----------------
     def _reward_lin_vel_z(self):
