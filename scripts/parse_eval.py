@@ -29,6 +29,9 @@ def main(eval_dir):
     # Convert dict to pandas dataframe
     df = generate_df(files, num_keys=num_keys, parser_fn=file_parser)
 
+    # Filter out episodes that were too short
+    df = df[df["dist_traveled"] > 1]
+
     # Group by seed (attempt) and get mean and std of mean across attempts
     num_attempts = max(df["attempt"]) + 1
     aggregated_stats = {

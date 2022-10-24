@@ -148,6 +148,7 @@ class LBC:
         return ans
 
     def act_inference(self, obs):
+        # print("OBS: ", obs)
         if self.kin_nav_policy is not None:
             obs = self.update_cmds(obs)
         
@@ -210,9 +211,9 @@ class LBC:
             self.lin_vel = lin_dist / (NAV_INTERVAL / 50.0)
             self.ang_vel = ang_dist / (NAV_INTERVAL / 50.0)
 
-            print(self.lin_vel, self.ang_vel)
-            if self.ang_vel > 0.5 or self.ang_vel < -0.5:
-                self.lin_vel = 0.3
+            # print(self.lin_vel, self.ang_vel)
+            # if self.ang_vel > 0.5 or self.ang_vel < -0.5:
+            #     self.lin_vel = 0.3
 
             print("LIN VEL ANG VEL: ", self.lin_vel, self.ang_vel)
             print("-"*100)

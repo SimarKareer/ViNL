@@ -156,6 +156,8 @@ def play(args):
         #     break
 
         obs, _, rews, dones, infos = env.step(actions.detach())
+        print("RF", RECORD_FRAMES)
+        print(train_cfg.runner.experiment_name)
         if RECORD_FRAMES:
             filename = os.path.join(
                 # LEGGED_GYM_ROOT_DIR,
@@ -165,7 +167,7 @@ def play(args):
                 train_cfg.runner.experiment_name,
                 "exported",
                 "frames",
-                f"{img_idx:04}.png",
+                f"{img_idx:05}.png",
             )
             # print("saving at fp: ", filename)
             manual_save_im(env, filename)

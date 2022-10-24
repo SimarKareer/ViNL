@@ -122,7 +122,7 @@ class AliengoObsCfg(LeggedRobotCfg):
             lin_vel_x = [0.0, 1.0]  # min max [m/s]
             lin_vel_y = [0.0, 0.0]  # min max [m/s]
             ang_vel_yaw = [-1.0, 1.0]  # min max [rad/s]
-            heading = [-3.14, 3.14]
+            heading = [-0.5, 0.00]
 
     class noise(LeggedRobotCfg.noise):
         add_noise = False
@@ -144,5 +144,6 @@ class AliengoObsCfgPPO(LeggedRobotCfgPPO):
         resume = True
         resume_path = (
             # "weights/Sep11_20-17-29_RoughTerrainDMEnc_model_4450_13.272511272532865.pt"
-            "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Aug05_12-59-13_ObsEncDM/model_4500.pt"
+            # "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Aug05_12-59-13_ObsEncDM/model_4500.pt"
+            "/home/naoki/gt/vl/legged_gym/weights/old/obs_aliengo_Jul22_12-33-19_ObsEncDM_model_4500.pt"
         )

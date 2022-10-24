@@ -92,7 +92,7 @@ class Terrain:
 
 
             # self.curiculum(diff=1.0, obs_scale=2)
-            self.height_field_raw = self.block_terrain(1000)
+            self.height_field_raw = self.block_terrain(1600)
 
             im = np.array(imageio.v2.imread(cfg.map_path), dtype=np.int16)
             im = im[:, :, 3]
@@ -106,7 +106,7 @@ class Terrain:
             
             self.height_field_raw = (self.height_field_raw).astype(np.int16)# + wall_map*20
             self.heightsamples = self.height_field_raw.copy()
-            self.height_field_raw += wall_map*20
+            self.height_field_raw += wall_map*3
             # print("post heightfield: ", np.unique(self.height_field_raw), self.height_field_raw.shape)
 
             # print("height field sum", self.height_field_raw.sum())
@@ -123,7 +123,7 @@ class Terrain:
         else:
             self.randomized_terrain()
             self.heightsamples = self.height_field_raw
-
+        print("HEIGHT SAMPLES: ", np.unique(self.heightsamples))
         # self.heightsamples = self.height_field_raw
         if self.type == "trimesh":
             # if cfg.map_path:
@@ -138,6 +138,8 @@ class Terrain:
                 # hscale = 1
             # hscale, vscale = 1, 1
             # vscale=0.1
+            print("Hor scale: ", self.cfg.horizontal_scale)
+            print("vertical scale: ", self.cfg.vertical_scale)
             (
                 self.vertices,
                 self.triangles,

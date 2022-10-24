@@ -361,7 +361,7 @@ class LeggedRobot(BaseTask):
                         trans_im = (trans_im[..., :3]).float() / 255
                         save_image(
                             trans_im.view((height, width, 3)).permute(2, 0, 1).float(),
-                            "images/im" + str(self.count) + ".png",
+                            "images/im{self.count:05}.png",
                         )
                 elif self.cfg.env.camera_type == "d":
                     im = self.gym.get_camera_image_gpu_tensor(
@@ -379,7 +379,7 @@ class LeggedRobot(BaseTask):
                         trans_im = trans_im / torch.max(trans_im)
                         save_image(
                             trans_im.view((height, width, 1)).permute(2, 0, 1).float(),
-                            f"images/dim/{i}_{self.count}.png",
+                            f"images/dim/{self.count:05}.png",
                         )
 
                     if SAVE_IMG:

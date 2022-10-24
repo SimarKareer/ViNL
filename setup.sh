@@ -17,6 +17,7 @@ pip install -r requirements.txt &&
 python setup.py develop --all &&
 git checkout aliengoisaac &&
 conda install -c conda-forge bullet -y &&
+pip install ifcfg &&
 pip install squaternion &&
 cd - &&
 

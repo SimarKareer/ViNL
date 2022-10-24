@@ -354,6 +354,8 @@ class LeggedRobotNav(LeggedRobot):
             "reset": self.num_steps == 0,
         }
 
+        # print("SELF.useDM: ", self.use_dm)
+
         if self.use_dm:
             heights = (
                 torch.clip(
