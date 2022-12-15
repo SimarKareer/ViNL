@@ -45,6 +45,7 @@ from legged_gym.utils.terrain import Terrain
 
 from .legged_robot_config import LeggedRobotCfg
 import time
+import pickle
 
 
 SAVE_IMG = False
@@ -334,6 +335,9 @@ class LeggedRobot(BaseTask):
                 * self.obs_scales.height_measurements
             )
             self.obs_buf = torch.cat((self.obs_buf, heights), dim=-1)
+            # print("heights: ", heights.shape)
+            # pickle.dump(heights.detach().cpu().numpy(), open(f"/home/naoki/gt/vl/legged_gym/logs/obs_aliengo/exported/frames/{self.count:05}.pkl", "wb"))
+
             # print("processed_heights: ", torch.unique(heights))
             # print("root states: ", self.root_states[:, 2].unsqueeze(1))
             # print("uniq proc: ", torch.unique(self.root_states[:, 2].unsqueeze(1)))

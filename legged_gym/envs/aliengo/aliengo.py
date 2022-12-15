@@ -54,6 +54,7 @@ class Aliengo(LeggedRobot):
 
         print("ALIENGO INIT")
         follow_cam, follow_trans = self.make_handle_trans((1920, 1080), 0, (1.0, -1.0, 0.0), (0.0, 0.0, 3*3.14/4))
+        # follow_cam, follow_trans = self.make_handle_trans((1920, 1080), 0, (0.0, 0.0, 2.0), (0.0, 3.14/2, 0.0))
         self.follow_cam = follow_cam
         body_handle = self.gym.find_actor_rigid_body_handle(
             self.envs[0], self.actor_handles[0], "base"
