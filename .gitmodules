@@ -1,6 +1,6 @@
-[submodule "rsl_rl"]
-	path = rsl_rl
-	url = git@github.com:SimarKareer/rsl_rl.git
-[submodule "habitat-lab"]
-	path = habitat-lab
+[submodule "submodules/habitat-lab"]
+	path = submodules/habitat-lab
 	url = https://github.com/joannetruong/habitat-lab.git
+[submodule "submodules/rsl_rl"]
+	path = submodules/rsl_rl
+	url = git@github.com:SimarKareer/rsl_rl.git
