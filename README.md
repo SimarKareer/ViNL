@@ -1,3 +1,26 @@
+# ViNL: Visual Navigation and Locomotion over Obstacles
+Code for our paper [ViNL: Visual Navigation and Locomotion over Obstacles](https://arxiv.org/abs/2210.14791)
+
+Simar Kareer*, Naoki Yokoyama*, Dhruv Batra, Sehoon Ha, Joanne Truong
+
+## What is ViNL
+![](resources/readme/CatAndMimic.png)
+
+Ever notice how cats can navigate while skillfully stepping over obstacles?
+
+We were inspired to make robots do the same.
+
+ViNL consists of:
+
+(1) a visual navigation policy that outputs velocity commands towards a goal coordinate in unfamiliar indoor environments; 
+and 
+
+(2) a visual locomotion policy that controls the robot’s joints to follow the velocity commands while stepping over obstacles
+
+
+## Acknowledgements
+This repo is based off of legged gym.  We rely on rsl_rl for rl algorithm implementation and isaacgym as our simulator.
+
 # Isaac Gym Environments for Legged Robots #
 This repository provides the environment used to train ANYmal (and other robots) to walk on rough terrain using NVIDIA's Isaac Gym.
 It includes all components needed for sim-to-real transfer: actuator network, friction & mass randomization, noisy observations and random pushes during training.  
