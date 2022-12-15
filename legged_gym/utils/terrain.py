@@ -37,7 +37,8 @@ import imageio
 import numpy as np
 from numpy.random import choice
 
-from isaacgym import terrain_utils
+# from isaacgym import terrain_utils
+from legged_gym.utils import terrain_utils
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg
 import tqdm
 
