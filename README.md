@@ -8,19 +8,56 @@ Simar Kareer*, Naoki Yokoyama*, Dhruv Batra, Sehoon Ha, Joanne Truong
 
 Ever notice how cats can navigate while skillfully stepping over obstacles?
 
-We were inspired to make robots do the same.
+We were inspired to make robots do the same!
 
 ViNL consists of:
 
-(1) a visual navigation policy that outputs velocity commands towards a goal coordinate in unfamiliar indoor environments; 
+(1) a visual navigation policy that outputs velocity commands towards a goal coordinate in unfamiliar indoor environments (trained in Habitat);
 and 
 
-(2) a visual locomotion policy that controls the robot’s joints to follow the velocity commands while stepping over obstacles
+(2) a visual locomotion policy that controls the robot’s joints to follow the velocity commands while stepping over obstacles (trained in Isaac)
 
+## Installation
+Clone this repo and submodules
+`git clone --recurse-submodules git@github.com:SimarKareer/ViNL.git`
+
+Try to run our setup script `setup.sh` but if that doesn't work
+
+Install submodules:
+`cd submodules/rsl_rl & pip install -e .`
+<!-- TODO: add instructions for habitat-lab -->
+
+Install Isaac Gym
+   - Download and install Isaac Gym Preview 3 (Preview 2 will not work!) from https://developer.nvidia.com/isaac-gym
+   - `cd isaacgym/python && pip install -e .`
+   - Try running an example `cd examples && python 1080_balls_of_solitude.py`
+   - For troubleshooting check docs `isaacgym/docs/index.html`)
+
+<!-- Put a set of models on google drive for evaluation -->
+
+## Full Training Procedure
+Training occurs in stages.  At each stage we include the checkpoint of the previous stage to continue training.
+
+1. Train a general purpose rough terrain walking policy (with privileged terrain info) `python legged_gym/scripts/train.py --task=aliengo_rough`
+2. Train a obstacle orriented walking policy (with privileged terrain info) `python legged_gym/scripts/train.py --task=aliengo_obs`
+3. Train a obstacle orriented walking policy (no privileged info terrain info).  This phase of training uses vision instead of a terrain map. `python legged_gym/scripts/train.py --task=aliengo_lbc`
+4. Train a navigation policy in habitat-sim
+<!-- Add link to checkpoint for each stage of training. -->
+
+To invidually evalauate any of these policies run `python legged_gym/scripts/play.py --task=<task here>`.
+
+## Evaluation
+To evaluate each part of our approach 1-3 one can run `python legged_gym/scripts/play.py --task=<task here>`.  Be sure to first edit the `resume_path` parameter in the approriate config first though.  As an example, here's how to evaluate (1)
+
+In `aliengo_rough_config.py` set `resume_path="weights/rough.pt"` and run `python legged_gym/scripts/play.py --task=aliengo_rough`
+
+Once you have a locomotion policy (3) and navigation policy (4) you can evaluate our full approach (ViNL) with:
+`python legged_gym/scripts/play.py --task=aliengo_nav --map=<optionally specify a floorplan>`
+We provide a number of floorplans in `resources/maps`
 
 ## Acknowledgements
-This repo is based off of legged gym.  We rely on rsl_rl for rl algorithm implementation and isaacgym as our simulator.
-
+This repo is forked from legged gym.  We rely on [rsl_rl](https://github.com/leggedrobotics/rsl_rl) for rl algorithm implementation and isaacgym as our simulator.  For information about how to add new tasks, robots, etc see [legged_gym](https://leggedrobotics.github.io/legged_gym/)
+<!-- 
 # Isaac Gym Environments for Legged Robots #
 This repository provides the environment used to train ANYmal (and other robots) to walk on rough terrain using NVIDIA's Isaac Gym.
 It includes all components needed for sim-to-real transfer: actuator network, friction & mass randomization, noisy observations and random pushes during training.  
@@ -113,4 +150,4 @@ The base environment `legged_robot` implements a rough terrain locomotion task. 
 
     self.gym.refresh_force_sensor_tensor(self.sim)
     contact = self.sensor_forces[:, :, 2] > 1.
-```
+``` -->
