@@ -21,13 +21,15 @@ and
 Clone this repo and submodules
 `git clone --recurse-submodules git@github.com:SimarKareer/ViNL.git`
 
-Try to run our setup script `setup.sh` but if that doesn't work
+Try to run our setup script `setup.sh`.  You will also need to run `export LD_LIBRARY_PATH=/path/to/conda/envs/vl2/lib`.  
+
+If that doesn't work here are some manual instructions
 
 Install submodules:
 `cd submodules/rsl_rl & pip install -e .`
 <!-- TODO: add instructions for habitat-lab -->
 
-Install Isaac Gym
+Install Isaac Gym (Instructions from [legged_gym](https://leggedrobotics.github.io/legged_gym/))
    - Download and install Isaac Gym Preview 3 (Preview 2 will not work!) from https://developer.nvidia.com/isaac-gym
    - `cd isaacgym/python && pip install -e .`
    - Try running an example `cd examples && python 1080_balls_of_solitude.py`

@@ -1,0 +1,7 @@
+pytorch-memlab
+typing-extensions~=3.7.4
+google-auth==1.6.3
+simplejson
+braceexpand
+pybullet
+squaternion
