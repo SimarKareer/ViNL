@@ -1,6 +1,7 @@
 conda create -n vinl -y python=3.7 &&
 conda activate vinl &&
-conda install pytorch torchvision cudatoolkit=11.6 -c pytorch -c conda-forge -y &&
+# conda install pytorch torchvision cudatoolkit=11.6 -c pytorch -c conda-forge -y &&
+conda install pytorch torchvision pytorch-cuda=11.6 -c pytorch -c nvidia -y &&
 conda install gdown tensorboard -c conda-forge -y &&
 pip install -r requirements.txt &&
 cd submodules && 
