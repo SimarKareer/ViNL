@@ -50,8 +50,9 @@ Install `requirements.txt` for each submodule and main repo.
     - `legged_gym/envs/base/legged_robot.py`: defines base legged robot tasks.
     - `legged_gym/envs/aliengo/aliengo.py`: defines robot and camera positions
     - `legged_gym/envs/base/legged_robot_config.py`: configuration for a legged robot task, inherited by other tasks like `aliengo_rough_config.py` or `aliengo_obs_config.py`
-    - `python legged_gym/scripts/train.py --task=<aliengo_rough | aliengo_obs | aliengo_lbc | aliengo_nav>`
-    - `python legged_gym/scripts/play.py --task=<aliengo_rough | aliengo_obs | aliengo_lbc | aliengo_nav>`
+    - `python legged_gym/scripts/train.py --task=<aliengo_rough | aliengo_obs>`
+    - `python legged_gym/scripts/lbc.py`: for final phase of training
+    - `python legged_gym/scripts/play.py --task=<aliengo_rough | aliengo_obs | aliengo_lbc | aliengo_nav>`: play works for all phases of training
     - `legged_gym/utils/terrain.py`: defines the map, which includes spawning obstacles and walls.  Wall locations are defined in `resources/maps`
 - `submodules/habitat-lab`: Fork of [habitat-lab](https://github.com/facebookresearch/habitat-lab).  Contains code for training visual navigation policy in habitat, using photorealistic 3d scans.
 - `submodules/rsl_rl`
@@ -80,6 +81,9 @@ In `aliengo_rough_config.py` set `resume_path="weights/rough.pt"` and run `pytho
 Once you have a locomotion policy (3) and navigation policy (4) you can evaluate our full approach (ViNL) with:
 `python legged_gym/scripts/play.py --task=aliengo_nav --map=<optionally specify a floorplan>`
 We provide a number of floorplans in `resources/maps`
+
+Helpful Tips:
+- You can set `RECORD_FRAMES=True` in `legged_gym/scripts/play.py` to record an episode to visually inspect.  You can convert the folder of images into a video via `ffmpeg -framerate 50 -pattern_type glob -i '*.png' -frames:v 9999 -c:v libx264 -pix_fmt yuv420p <videoName>.mp4`
 
 ## Acknowledgements
 This repo is forked from legged gym.  We rely on [rsl_rl](https://github.com/leggedrobotics/rsl_rl) for rl algorithm implementation and isaacgym as our simulator.  For information about how to add new tasks, robots, etc see [legged_gym](https://leggedrobotics.github.io/legged_gym/)
