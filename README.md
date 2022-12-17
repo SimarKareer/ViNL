@@ -8,109 +8,75 @@ Simar Kareer*, Naoki Yokoyama*, Dhruv Batra, Sehoon Ha, Joanne Truong
 
 Ever notice how cats can navigate while skillfully stepping over obstacles?
 
-We were inspired to make robots do the same.
+We were inspired to make robots do the same!
 
 ViNL consists of:
 
-(1) a visual navigation policy that outputs velocity commands towards a goal coordinate in unfamiliar indoor environments; 
+(1) a visual navigation policy that outputs velocity commands towards a goal coordinate in unfamiliar indoor environments (trained in Habitat);
 and 
 
-(2) a visual locomotion policy that controls the robot’s joints to follow the velocity commands while stepping over obstacles
+(2) a visual locomotion policy that controls the robot’s joints to follow the velocity commands while stepping over obstacles (trained in Isaac)
 
+## Installation
+### Easy Version
+Clone this repo and submodules
+`git clone --recurse-submodules git@github.com:SimarKareer/ViNL.git`
 
-## Acknowledgements
-This repo is based off of legged gym.  We rely on rsl_rl for rl algorithm implementation and isaacgym as our simulator.
+1. Run `setup.sh`.  You can just copy paste the contents into your terminal.  This will take around 10 minutes.
+2. Locate your env and run `export LD_LIBRARY_PATH=/path/to/conda/envs/vinl/lib`.  `which python` can help you locate it.
+3. Test your installation by running `python legged_gym/scripts/play.py --task=aliengo_nav --episode_id=-10`
 
-# Isaac Gym Environments for Legged Robots #
-This repository provides the environment used to train ANYmal (and other robots) to walk on rough terrain using NVIDIA's Isaac Gym.
-It includes all components needed for sim-to-real transfer: actuator network, friction & mass randomization, noisy observations and random pushes during training.  
-**Maintainer**: Nikita Rudin  
-**Affiliation**: Robotic Systems Lab, ETH Zurich  
-**Contact**: rudinn@ethz.ch  
+### Hard Version
+If that doesn't work here are some manual instructions
 
-### Useful Links ###
-Project website: https://leggedrobotics.github.io/legged_gym/
-Paper: https://arxiv.org/abs/2109.11978
-
-### Installation ###
-1. Create a new python virtual env with python 3.6, 3.7 or 3.8 (3.8 recommended)
-2. Install pytorch 1.10 with cuda-11.3:
-    - `pip3 install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html`
-3. Install Isaac Gym
+Install Isaac Gym (Instructions from [legged_gym](https://leggedrobotics.github.io/legged_gym/)).  Put it in `/submodules`
    - Download and install Isaac Gym Preview 3 (Preview 2 will not work!) from https://developer.nvidia.com/isaac-gym
    - `cd isaacgym/python && pip install -e .`
    - Try running an example `cd examples && python 1080_balls_of_solitude.py`
    - For troubleshooting check docs `isaacgym/docs/index.html`)
-4. Install rsl_rl (PPO implementation)
-   - Clone https://github.com/leggedrobotics/rsl_rl
-   -  `cd rsl_rl && pip install -e .` 
-5. Install legged_gym
-    - Clone this repository
-   - `cd legged_gym && pip install -e .`
 
-### CODE STRUCTURE ###
-1. Each environment is defined by an env file (`legged_robot.py`) and a config file (`legged_robot_config.py`). The config file contains two classes: one conatianing all the environment parameters (`LeggedRobotCfg`) and one for the training parameters (`LeggedRobotCfgPPo`).  
-2. Both env and config classes use inheritance.  
-3. Each non-zero reward scale specified in `cfg` will add a function with a corresponding name to the list of elements which will be summed to get the total reward.  
-4. Tasks must be registered using `task_registry.register(name, EnvClass, EnvConfig, TrainConfig)`. This is done in `envs/__init__.py`, but can also be done from outside of this repository.  
+Install all submodules via 
+`cd submodules/isaacgym/python pip install -e .`
+`cd submodules/rsl_rl pip install -e .`
+`cd submodules/habitat-lab pip install -e .`
 
-### Usage ###
-1. Train:  
-  ```python issacgym_anymal/scripts/train.py --task=anymal_c_flat```
-    -  To run on CPU add following arguments: `--sim_device=cpu`, `--rl_device=cpu` (sim on CPU and rl on GPU is possible).
-    -  To run headless (no rendering) add `--headless`.
-    - **Important**: To improve performance, once the training starts press `v` to stop the rendering. You can then enable it later to check the progress.
-    - The trained policy is saved in `issacgym_anymal/logs/<experiment_name>/<date_time>_<run_name>/model_<iteration>.pt`. Where `<experiment_name>` and `<run_name>` are defined in the train config.
-    -  The following command line arguments override the values set in the config files:
-     - --task TASK: Task name.
-     - --resume:   Resume training from a checkpoint
-     - --experiment_name EXPERIMENT_NAME: Name of the experiment to run or load.
-     - --run_name RUN_NAME:  Name of the run.
-     - --load_run LOAD_RUN:   Name of the run to load when resume=True. If -1: will load the last run.
-     - --checkpoint CHECKPOINT:  Saved model checkpoint number. If -1: will load the last checkpoint.
-     - --num_envs NUM_ENVS:  Number of environments to create.
-     - --seed SEED:  Random seed.
-     - --max_iterations MAX_ITERATIONS:  Maximum number of training iterations.
-2. Play a trained policy:  
-```python issacgym_anymal/scripts/play.py --task=anymal_c_flat```
-    - By default the loaded policy is the last model of the last run of the experiment folder.
-    - Other runs/model iteration can be selected by setting `load_run` and `checkpoint` in the train config.
+Install `requirements.txt` for each submodule and main repo.
+<!-- Put a set of models on google drive for evaluation -->
 
-### Adding a new environment ###
-The base environment `legged_robot` implements a rough terrain locomotion task. The corresponding cfg does not specify a robot asset (URDF/ MJCF) and no reward scales. 
+## Code Structure
+- root
+    - The root folder is a fork of [legged_gym](https://leggedrobotics.github.io/legged_gym/)
+    - This contains all the code necessary to train locomotion policies.
+    - `legged_gym/envs/base/legged_robot.py`: defines base legged robot tasks.
+    - `legged_gym/envs/aliengo/aliengo.py`: defines robot and camera positions
+    - `legged_gym/envs/base/legged_robot_config.py`: configuration for a legged robot task, inherited by other tasks like `aliengo_rough_config.py` or `aliengo_obs_config.py`
+    - `python legged_gym/scripts/train.py --task=<aliengo_rough | aliengo_obs | aliengo_lbc | aliengo_nav>`
+    - `python legged_gym/scripts/play.py --task=<aliengo_rough | aliengo_obs | aliengo_lbc | aliengo_nav>`
+    - `legged_gym/utils/terrain.py`: defines the map, which includes spawning obstacles and walls.  Wall locations are defined in `resources/maps`
+- `submodules/habitat-lab`: Fork of [habitat-lab](https://github.com/facebookresearch/habitat-lab).  Contains code for training visual navigation policy in habitat, using photorealistic 3d scans.
+- `submodules/rsl_rl`
+    - Fork of [rsl_rl](https://github.com/leggedrobotics/rsl_rl).
+    - Our modifications allow for [Learning by Cheating](https://arxiv.org/abs/1912.12294) style training.  We use this to recreate privileged terrain information via egocentric vision.
 
-1. Add a new folder to `envs/` with `'<your_env>_config.py`, which inherit from an existing environment cfgs  
-2. If adding a new robot:
-    - Add the corresponding assets to `resourses/`.
-    - In `cfg` set the asset path, define body names, default_joint_positions and PD gains. Specify the desired `train_cfg` and the name of the environment (python class).
-    - In `train_cfg` set `experiment_name` and `run_name`
-3. (If needed) implement your environment in <your_env>.py, inherit from an existing environment, overwrite the desired functions and/or add your reward functions.
-4. Register your env in `isaacgym_anymal/envs/__init__.py`.
-5. Modify/Tune other parameters in your `cfg`, `cfg_train` as needed. To remove a reward set its scale to zero. Do not modify parameters of other envs!
+## Full Training Procedure
+Training occurs in stages.  At each stage we include the checkpoint of the previous stage to continue training.
 
+1. Train a general purpose rough terrain walking policy (with privileged terrain info) `python legged_gym/scripts/train.py --task=aliengo_rough`
+2. Train a obstacle orriented walking policy (with privileged terrain info) `python legged_gym/scripts/train.py --task=aliengo_obs`
+3. Train a obstacle orriented walking policy (no privileged info terrain info).  This phase of training uses vision instead of a terrain map. `python legged_gym/scripts/train.py --task=aliengo_lbc`
+4. Train a navigation policy in habitat-sim
+<!-- Add link to checkpoint for each stage of training. -->
 
-### Troubleshooting ###
-1. If you get the following error: `ImportError: libpython3.8m.so.1.0: cannot open shared object file: No such file or directory`, do: `sudo apt install libpython3.8`
+To invidually evalauate any of these policies run `python legged_gym/scripts/play.py --task=<task here>`.
 
-### Known Issues ###
-1. The contact forces reported by `net_contact_force_tensor` are unreliable when simulating on GPU with a triangle mesh terrain. A workaround is to use force sensors, but the force are propagated through the sensors of consecutive bodies resulting in an undesireable behaviour. However, for a legged robot it is possible to add sensors to the feet/end effector only and get the expected results. When using the force sensors make sure to exclude gravity from trhe reported forces with `sensor_options.enable_forward_dynamics_forces`. Example:
-```
-    sensor_pose = gymapi.Transform()
-    for name in feet_names:
-        sensor_options = gymapi.ForceSensorProperties()
-        sensor_options.enable_forward_dynamics_forces = False # for example gravity
-        sensor_options.enable_constraint_solver_forces = True # for example contacts
-        sensor_options.use_world_frame = True # report forces in world frame (easier to get vertical components)
-        index = self.gym.find_asset_rigid_body_index(robot_asset, name)
-        self.gym.create_asset_force_sensor(robot_asset, index, sensor_pose, sensor_options)
-    (...)
+## Evaluation
+To evaluate each part of our approach 1-3 one can run `python legged_gym/scripts/play.py --task=<task here>`.  Be sure to first edit the `resume_path` parameter in the approriate config first though.  As an example, here's how to evaluate (1)
 
-    sensor_tensor = self.gym.acquire_force_sensor_tensor(self.sim)
-    self.gym.refresh_force_sensor_tensor(self.sim)
-    force_sensor_readings = gymtorch.wrap_tensor(sensor_tensor)
-    self.sensor_forces = force_sensor_readings.view(self.num_envs, 4, 6)[..., :3]
-    (...)
+In `aliengo_rough_config.py` set `resume_path="weights/rough.pt"` and run `python legged_gym/scripts/play.py --task=aliengo_rough`
 
-    self.gym.refresh_force_sensor_tensor(self.sim)
-    contact = self.sensor_forces[:, :, 2] > 1.
-```
+Once you have a locomotion policy (3) and navigation policy (4) you can evaluate our full approach (ViNL) with:
+`python legged_gym/scripts/play.py --task=aliengo_nav --map=<optionally specify a floorplan>`
+We provide a number of floorplans in `resources/maps`
+
+## Acknowledgements
+This repo is forked from legged gym.  We rely on [rsl_rl](https://github.com/leggedrobotics/rsl_rl) for rl algorithm implementation and isaacgym as our simulator.  For information about how to add new tasks, robots, etc see [legged_gym](https://leggedrobotics.github.io/legged_gym/)

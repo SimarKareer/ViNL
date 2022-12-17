@@ -28,27 +28,68 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from time import time
-import numpy as np
 import os
-
 from isaacgym.torch_utils import *
-from isaacgym import gymtorch, gymapi, gymutil
 
-import torch
-
-# from torch.tensor import Tensor
-from typing import Tuple, Dict
-
+from isaacgym import gymapi
 from legged_gym.envs import LeggedRobot
-from legged_gym import LEGGED_GYM_ROOT_DIR
+
 from .mixed_terrains.aliengo_rough_config import AliengoRoughCfg
 
 
-class Aliengo(LeggedRobot):
+class AlienGoCameraMixin:
+    def __init__(self, *args, **kwargs):
+        self.follow_cam = None
+        self.floating_cam = None
+        super().__init__(*args, **kwargs)
+
+    def init_aux_cameras(self):
+        if os.environ.get("ISAAC_FOLLOW_CAM", "False") == "True":
+            self.follow_cam, follow_trans = self.make_handle_trans(
+                600, 400, 0, (1.0, -1.0, 0.0), (0.0, 0.0, 3 * 3.14 / 4)
+            )
+            body_handle = self.gym.find_actor_rigid_body_handle(
+                self.envs[0], self.actor_handles[0], "base"
+            )
+            self.gym.attach_camera_to_body(
+                self.follow_cam,  # camera_handle,
+                self.envs[0],
+                body_handle,
+                follow_trans,
+                gymapi.FOLLOW_POSITION,
+            )
+
+        if os.environ.get("ISAAC_FLOATING_CAM", "False") == "True":
+            self.floating_cam, _ = self.make_handle_trans(
+                # 1280, 720, 0, (0, 0, 0), (0, 0, 0), hfov=50
+                1920, 1080, 0, (0, 0, 0), (0, 0, 0)
+            )
+            camera_position = gymapi.Vec3(5, 5, 5)
+            camera_target = gymapi.Vec3(0, 0, 0)
+            self.gym.set_camera_location(
+                self.floating_cam, self.envs[0], camera_position, camera_target
+            )
+
+    def make_handle_trans(self, width, height, env_idx, trans, rot, hfov=None):
+        camera_props = gymapi.CameraProperties()
+        camera_props.width = width
+        camera_props.height = height
+        camera_props.enable_tensors = True
+        if hfov is not None:
+            camera_props.horizontal_fov = hfov
+        camera_handle = self.gym.create_camera_sensor(self.envs[env_idx], camera_props)
+        local_transform = gymapi.Transform()
+        local_transform.p = gymapi.Vec3(*trans)
+        local_transform.r = gymapi.Quat.from_euler_zyx(*rot)
+        return camera_handle, local_transform
+
+
+class Aliengo(AlienGoCameraMixin, LeggedRobot):
     cfg: AliengoRoughCfg
 
-    def __init__(self, cfg, sim_params, physics_engine, sim_device, headless, record=False):
+    def __init__(
+        self, cfg, sim_params, physics_engine, sim_device, headless, record=False
+    ):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
         self.camera_handles = []
 
@@ -79,8 +120,9 @@ class Aliengo(LeggedRobot):
                 self.camera_handles.append(cam1)
 
 
-                body_handle = self.gym.find_actor_rigid_body_handle(
-                    self.envs[i], self.actor_handles[i], "base"
+                width, height = cfg.env.camera_res
+                camera_handle, local_transform = self.make_handle_trans(
+                    width, height, env_idx, (0.35, 0.0, 0.0), (0.0, 3.14 / 6, 0.0)
                 )
 
                 self.gym.attach_camera_to_body(
@@ -91,26 +133,7 @@ class Aliengo(LeggedRobot):
                     gymapi.FOLLOW_TRANSFORM,
                 )
 
-            # self.gym.set_camera_transform(camera_handle, self.envs[i], local_transform)
-        # if record:
-        #     camera_props = gymapi.CameraProperties()
-        #     width, height = cfg.env.camera_res
-        #     camera_props.width = 128
-        #     camera_props.height = 128
-        #     # camera_props.enable_tensors = True
-        #     camera_handle = self.gym.create_camera_sensor(
-        #         self.envs[0], camera_props
-        #     )
-        #     print("CAM HANDLE: ", camera_handle)
-        #     self.camera_handles.append(camera_handle)
-
-        #     local_transform = gymapi.Transform()
-        #     local_transform.p = gymapi.Vec3(0.35, 0.0, 0.0)
-        #     local_transform.r = gymapi.Quat.from_euler_zyx(0.0, 0.0, 0.0)
-        # # load actuator network
-        # if self.cfg.control.use_actuator_network:
-        #     actuator_network_path = self.cfg.control.actuator_net_file.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
-        #     self.actuator_network = torch.jit.load(actuator_network_path).to(self.device)
+        self.init_aux_cameras()
 
     def reset_idx(self, env_ids):
         super().reset_idx(env_ids)
@@ -150,13 +173,4 @@ class Aliengo(LeggedRobot):
         )
 
     def _compute_torques(self, actions):
-        # Choose between pd controller and actuator network
-        # if self.cfg.control.use_actuator_network:
-        #     with torch.inference_mode():
-        #         self.sea_input[:, 0, 0] = (actions * self.cfg.control.action_scale + self.default_dof_pos - self.dof_pos).flatten()
-        #         self.sea_input[:, 0, 1] = self.dof_vel.flatten()
-        #         torques, (self.sea_hidden_state[:], self.sea_cell_state[:]) = self.actuator_network(self.sea_input, (self.sea_hidden_state, self.sea_cell_state))
-        #     return torques
-        # else:
-        #     # pd controller
         return super()._compute_torques(actions)

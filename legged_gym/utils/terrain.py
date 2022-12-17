@@ -345,20 +345,33 @@ class Terrain:
             start = np.array(start_goal[:2])
             goal = np.array(start_goal[2:4])
 
+        scale = float(os.environ["ISAAC_HOR_SCALE"])
+        scale = 1 if scale == -1 else scale / 0.4
+        start = start * scale
+        goal = goal * scale
+
         self.terrain_start = start.copy()
         self.terrain_goal = goal.copy()
 
         # Convert coordinates to be proper terrain coordinates ("global")
-        scale = float(os.environ["ISAAC_HOR_SCALE"])
-        scale = 1 if scale == -1 else scale / 0.4
         start, goal = [
             np.array(
-                [-(89.9 * 250 / 900) + i[0] * scale, -(89.9 * 250 / 900) + i[1] * scale]
+                [-(89.9 * 250 / 900) + i[0], -(89.9 * 250 / 900) + i[1]]
             )
             for i in [start, goal]
         ]
 
         os.environ["isaac_episode"] = "_".join([str(i) for i in [*start, *goal]])
+
+        # Save info about terrain boundaries for floating camera placement
+        x0, x1, y0, y1 = self.get_terrain_bounds()
+        coors = [
+            np.array(
+                [-(89.9 * 250 / 900) + i[0], -(89.9 * 250 / 900) + i[1]]
+            )
+            for i in [(x0, y0), (x1, y1)]
+        ]
+        os.environ["isaac_bounds"] = "_".join([str(i) for i in [*coors[0], *coors[1]]])
 
     def generate_episode(self):
         x0, x1, y0, y1 = self.get_terrain_bounds()
