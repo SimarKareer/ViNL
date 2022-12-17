@@ -142,8 +142,5 @@ class AliengoObsCfgPPO(LeggedRobotCfgPPO):
         num_test_envs=1
 
         resume = True
-        resume_path = (
-            # "weights/Sep11_20-17-29_RoughTerrainDMEnc_model_4450_13.272511272532865.pt"
-            # "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Aug05_12-59-13_ObsEncDM/model_4500.pt"
-            "/home/naoki/gt/vl/legged_gym/weights/old/obs_aliengo_Jul22_12-33-19_ObsEncDM_model_4500.pt"
-        )
+        resume_path = "weights/rough.pt" # if you want to train
+        # resume_path = "weights/obs.pt" if you want to eval

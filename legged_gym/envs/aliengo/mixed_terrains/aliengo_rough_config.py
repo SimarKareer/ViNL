@@ -121,6 +121,8 @@ class AliengoRoughCfgPPO(LeggedRobotCfgPPO):
         run_name = "RoughTerrainDMEnc"
         experiment_name = "rough_aliengo"
         load_run = -1
-        resume_path = "weights/ny_rough_aliengo_Sep06_11-46-01_RoughTerrainDMEnc_model_1500.pt"
+        # resume_path = "weights/ny_rough_aliengo_Sep06_11-46-01_RoughTerrainDMEnc_model_1500.pt"
+        
+        resume_path = "rough.pt" # rough.pt is the trained rough terrain policy.  Keep this line if you want to eval this policy via play.py.  Comment this line if you wish to train a rough terrain policy from scratch
         max_iterations = 4500
 

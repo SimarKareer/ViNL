@@ -50,7 +50,7 @@ class AliengoNavCfg(LeggedRobotCfg):
         num_privileged_obs = None  # 187
         train_type = "lbc"  # standard, priv, lbc
         episode_length_s = 125  # episode length in seconds
-        use_dm = True
+        use_dm = False
 
     class terrain(LeggedRobotCfg.terrain):
         # terrain_proportions = [0.1, 0.1, 0.2, 0.2, 0.2, 0.2]
@@ -144,13 +144,16 @@ class AliengoNavCfgAlg(LeggedRobotCfgPPO):
         # resume_path = "weights/Sep11_23-48-28_debug_model_10000_16.232642258265987.pt"
         # resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/lbc_aliengo/Aug09_00-01-40_debug/model_10000.pt" #Simar OG STUDENT Policy
         # resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Aug05_12-59-13_ObsEncDM/model_4500.pt"
-        resume_path = "weights/Sep11_21-26-00_ObsEncDM_model_1150_19.086456518173218.pt"
+        # resume_path = "weights/Sep11_21-26-00_ObsEncDM_model_1150_19.086456518173218.pt"
+        # resume_path = "weights/lbc.pt"
+        resume_path = "weights/Sep11_23-48-28_debug_model_10000_16.232642258265987.pt"
 
 
-        # teacher_policy = "weights/Sep11_21-26-00_ObsEncDM_model_1150_19.086456518173218.pt"
-        kin_nav_policy = "weights/VISUAL_LOCOMOTION_aliengo_kinematic_habitat_camera_up_2hz_57deg_camera_noise_sd_2_ckpt.84.pth"
+        teacher_policy = "weights/Sep11_21-26-00_ObsEncDM_model_1150_19.086456518173218.pt"
+        kin_nav_policy = "weights/kinNav.pth"
         # alt_ckpt = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Aug05_12-59-13_ObsEncDM/model_4500.pt"
-        alt_ckpt = "weights/Sep11_21-26-00_ObsEncDM_model_1150_19.086456518173218.pt"
+        alt_ckpt = None
+        # alt_ckpt = "weights/lbc.pt"
 
     class lbc(LeggedRobotCfgPPO.lbc):
         batch_size = 10

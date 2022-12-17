@@ -156,8 +156,6 @@ def play(args):
         #     break
 
         obs, _, rews, dones, infos = env.step(actions.detach())
-        print("RF", RECORD_FRAMES)
-        print(train_cfg.runner.experiment_name)
         if RECORD_FRAMES:
             filename = os.path.join(
                 # LEGGED_GYM_ROOT_DIR,

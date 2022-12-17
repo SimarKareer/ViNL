@@ -144,16 +144,11 @@ class AliengoLbcCfgPPO(LeggedRobotCfgPPO):
         max_iterations = 10000  # number of policy updates
         num_test_envs = 1
 
-        resume = False
-        # resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/lbc_aliengo/Aug09_00-01-40_debug/model_10000.pt" #OG Student Model [Simar]
-        resume_path = "/home/naoki/gt/vl/legged_gym/weights/old/lbc_aliengo_Aug09_00-01-40_debug_model_10000.pt"
-        # resume_path = "/home/naoki/gt/vl/legged_gym/weights/Sep11_23-48-28_debug_model_10000_16.232642258265987.pt" # Ours (0.15)
+        resume = True #True for eval, false for train
 
-        # resume_path = "./logs/obs_aliengo/Apr07_12-17-33_NoObsRewards/model_3000.pt"
-        # teacher_policy = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/rough_aliengo/Jul22_12-01-58_RoughTerrainDMEnc/model_1500.pt"
-        # teacher_policy = "weights/Sep11_21-26-00_ObsEncDM_model_1150_19.086456518173218.pt"
-        teacher_policy = "/home/naoki/gt/vl/legged_gym/weights/old/obs_aliengo_Jul22_12-33-19_ObsEncDM_model_4500.pt"
-        # teacher_policy = "weights/Sep14_06-52-43_ObsEncDM_model_4250_16.138804819360374_trained_on_0.25.pt"
+        resume_path = "weights/lbc.pt"
+
+        teacher_policy = "weights/obs.pt"
 
     class lbc(LeggedRobotCfgPPO.lbc):
         batch_size = 10
