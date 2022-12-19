@@ -198,8 +198,10 @@ class Actor(nn.Module):
         return self.distribution.log_prob(actions).sum(dim=-1)
 
     def act_inference(self, proprio, enc_depth_map):
-        observations = torch.cat((proprio, enc_depth_map), dim=-1)
-
+        if os.environ["ISAAC_BLIND"] != "True":
+            observations = torch.cat((proprio, enc_depth_map), dim=-1)
+        else:
+            observations = proprio
         actions_mean = self.actor(observations)
         return actions_mean
 

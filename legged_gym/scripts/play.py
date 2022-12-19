@@ -74,6 +74,7 @@ def play(args):
     os.environ["ISAAC_HOR_SCALE"] = str(args.hor_scale)
 
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
+    env_cfg.env.follow_cam = True
     if isinstance(env_cfg, AliengoNavCfg):
         env_cfg.terrain.map_path = args.map
     env_cfg.terrain.no_blocks = args.no_blocks

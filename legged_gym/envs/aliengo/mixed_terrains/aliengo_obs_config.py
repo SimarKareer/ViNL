@@ -53,6 +53,9 @@ class AliengoObsCfg(LeggedRobotCfg):
         num_privileged_obs = None  # 187
         train_type = "priv"  # standard, priv, lbc
 
+        follow_cam=False
+        float_cam=False
+
     class terrain(LeggedRobotCfg.terrain):
         # terrain_proportions = [0.1, 0.1, 0.2, 0.2, 0.2, 0.2]
         terrain_proportions = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
@@ -143,4 +146,4 @@ class AliengoObsCfgPPO(LeggedRobotCfgPPO):
 
         resume = True
         resume_path = "weights/rough.pt" # if you want to train
-        # resume_path = "weights/obs.pt" if you want to eval
+        # resume_path = "weights/obs.pt" #if you want to eval

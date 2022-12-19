@@ -52,6 +52,9 @@ class AliengoNavCfg(LeggedRobotCfg):
         episode_length_s = 125  # episode length in seconds
         use_dm = False
 
+        follow_cam=True
+        float_cam=False
+
     class terrain(LeggedRobotCfg.terrain):
         # terrain_proportions = [0.1, 0.1, 0.2, 0.2, 0.2, 0.2]
         terrain_proportions = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]

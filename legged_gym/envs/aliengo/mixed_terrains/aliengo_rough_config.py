@@ -53,6 +53,9 @@ class AliengoRoughCfg(LeggedRobotCfg):
         num_privileged_obs = None  # 187
         train_type = "priv"  # standard, priv, lbc
 
+        follow_cam=False
+        float_cam=False
+
     class terrain(LeggedRobotCfg.terrain):
         mesh_type = "trimesh"
 
