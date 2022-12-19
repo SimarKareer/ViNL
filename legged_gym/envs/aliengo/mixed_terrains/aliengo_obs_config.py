@@ -53,6 +53,9 @@ class AliengoObsCfg(LeggedRobotCfg):
         num_privileged_obs = None  # 187
         train_type = "priv"  # standard, priv, lbc
 
+        follow_cam=False
+        float_cam=False
+
     class terrain(LeggedRobotCfg.terrain):
         # terrain_proportions = [0.1, 0.1, 0.2, 0.2, 0.2, 0.2]
         terrain_proportions = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
@@ -122,7 +125,7 @@ class AliengoObsCfg(LeggedRobotCfg):
             lin_vel_x = [0.0, 1.0]  # min max [m/s]
             lin_vel_y = [0.0, 0.0]  # min max [m/s]
             ang_vel_yaw = [-1.0, 1.0]  # min max [rad/s]
-            heading = [-3.14, 3.14]
+            heading = [-0.5, 0.00]
 
     class noise(LeggedRobotCfg.noise):
         add_noise = False
@@ -139,8 +142,8 @@ class AliengoObsCfgPPO(LeggedRobotCfgPPO):
         experiment_name = "obs_aliengo"
         load_run = -1
         max_iterations = 6000  # number of policy updates
+        num_test_envs=1
 
         resume = True
-        resume_path = (
-            "weights/Sep11_20-17-29_RoughTerrainDMEnc_model_4450_13.272511272532865.pt"
-        )
+        resume_path = "weights/rough.pt" # if you want to train
+        # resume_path = "weights/obs.pt" #if you want to eval

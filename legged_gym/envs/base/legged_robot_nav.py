@@ -354,6 +354,8 @@ class LeggedRobotNav(LeggedRobot):
             "reset": self.num_steps == 0,
         }
 
+        # print("SELF.useDM: ", self.use_dm)
+
         if self.use_dm:
             heights = (
                 torch.clip(
@@ -379,6 +381,7 @@ class LeggedRobotNav(LeggedRobot):
                 for i in (level_image, tilted_image)
             ]
             cv2.imshow("", np.hstack(imgs))
+            # cv2.imwrite("images/images.png", np.hstack(imgs))
             cv2.waitKey(1)
 
     def get_images(self):

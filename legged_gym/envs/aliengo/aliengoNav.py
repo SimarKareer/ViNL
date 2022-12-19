@@ -49,6 +49,8 @@ class AliengoNav(AlienGoCameraMixin, LeggedRobotNav):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
         self.camera_handles = []
 
+        self.init_aux_cameras(cfg.env.follow_cam, cfg.env.float_cam)
+
         width, height = cfg.env.camera_res
         trans = (0.35, 0.0, 0.0)
         if cfg.env.train_type == "lbc":
@@ -76,7 +78,6 @@ class AliengoNav(AlienGoCameraMixin, LeggedRobotNav):
                         gymapi.FOLLOW_TRANSFORM,
                     )
 
-        self.init_aux_cameras()
         self.floating_cam_moved = False
 
     def step(self, actions):
@@ -93,9 +94,9 @@ class AliengoNav(AlienGoCameraMixin, LeggedRobotNav):
                 )
             )
             self.gym.end_access_image_tensors(self.sim)
-            img = cv2.cvtColor(image.cpu().numpy(), cv2.COLOR_RGB2BGR)
-            cv2.imshow("Follow camera", img)
-            cv2.waitKey(1)
+            # img = cv2.cvtColor(image.cpu().numpy(), cv2.COLOR_RGB2BGR)
+            # cv2.imshow("Follow camera", img)
+            # cv2.waitKey(1)
 
         if not self.floating_cam_moved:
             x0, y0, x1, y1 = [
@@ -125,9 +126,9 @@ class AliengoNav(AlienGoCameraMixin, LeggedRobotNav):
                 )
             )
             self.gym.end_access_image_tensors(self.sim)
-            img = cv2.cvtColor(image.cpu().numpy(), cv2.COLOR_RGB2BGR)
-            cv2.imshow("Floating camera", img)
-            cv2.waitKey(1)
+            # img = cv2.cvtColor(image.cpu().numpy(), cv2.COLOR_RGB2BGR)
+            # cv2.imshow("Floating camera", img)
+            # cv2.waitKey(1)
 
         return ret
 

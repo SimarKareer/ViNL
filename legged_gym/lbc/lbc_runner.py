@@ -26,6 +26,7 @@ class LbcRunner:
 
         alt_ckpt = train_cfg["runner"].get("alt_ckpt", None)
         self.use_dm = alt_ckpt is not None and alt_ckpt != ""
+        print("USEDM in LBC Runner: ", self.use_dm)
 
         enc_hidden_dims = train_cfg["obsSize"]["encoder_hidden_dims"]
         num_dm_encoder_obs = train_cfg["obsSize"]["num_dm_encoder_obs"]

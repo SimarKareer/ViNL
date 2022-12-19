@@ -45,6 +45,7 @@ from legged_gym.utils.terrain import Terrain
 
 from .legged_robot_config import LeggedRobotCfg
 import time
+import pickle
 
 
 SAVE_IMG = False
@@ -96,6 +97,35 @@ class LeggedRobot(BaseTask):
             ]
         )
         self.first_iter = True
+
+    def make_handle_trans(self, res, env_num, trans, rot, hfov=None):
+        # TODO Add camera sensors here?
+        camera_props = gymapi.CameraProperties()
+        # print("FOV: ", camera_props.horizontal_fov)
+        # camera_props.horizontal_fov = 75.0
+        # 1280 x 720
+        width, height = res
+        camera_props.width = width
+        camera_props.height = height
+        camera_props.enable_tensors = True
+        if hfov is not None:
+            camera_props.horizontal_fov = hfov
+        # print("envs[i]", self.envs[i])
+        # print("len envs: ", len(self.envs))
+        camera_handle = self.gym.create_camera_sensor(
+            self.envs[env_num], camera_props
+        )
+        # print("cam handle: ", camera_handle)
+
+        local_transform = gymapi.Transform()
+        # local_transform.p = gymapi.Vec3(75.0, 75.0, 30.0)
+        # local_transform.r = gymapi.Quat.from_euler_zyx(0, 3.14 / 2, 3.14)
+        x, y, z = trans
+        local_transform.p = gymapi.Vec3(x, y, z)
+        a, b, c = rot
+        local_transform.r = gymapi.Quat.from_euler_zyx(a, b, c)
+
+        return camera_handle, local_transform
 
     def step(self, actions):
         """Apply actions, simulate, call self.post_physics_step()
@@ -305,6 +335,12 @@ class LeggedRobot(BaseTask):
                 * self.obs_scales.height_measurements
             )
             self.obs_buf = torch.cat((self.obs_buf, heights), dim=-1)
+            # print("heights: ", heights.shape)
+            # pickle.dump(heights.detach().cpu().numpy(), open(f"/home/naoki/gt/vl/legged_gym/logs/obs_aliengo/exported/frames/{self.count:05}.pkl", "wb"))
+
+            # print("processed_heights: ", torch.unique(heights))
+            # print("root states: ", self.root_states[:, 2].unsqueeze(1))
+            # print("uniq proc: ", torch.unique(self.root_states[:, 2].unsqueeze(1)))
 
         self.count += 1
         if self.cfg.env.train_type == "lbc":
@@ -329,7 +365,7 @@ class LeggedRobot(BaseTask):
                         trans_im = (trans_im[..., :3]).float() / 255
                         save_image(
                             trans_im.view((height, width, 3)).permute(2, 0, 1).float(),
-                            "images/im" + str(self.count) + ".png",
+                            "images/im{self.count:05}.png",
                         )
                 elif self.cfg.env.camera_type == "d":
                     im = self.gym.get_camera_image_gpu_tensor(
@@ -347,7 +383,7 @@ class LeggedRobot(BaseTask):
                         trans_im = trans_im / torch.max(trans_im)
                         save_image(
                             trans_im.view((height, width, 1)).permute(2, 0, 1).float(),
-                            f"images/dim/{i}_{self.count}.png",
+                            f"images/dim/{self.count:05}.png",
                         )
 
                     if SAVE_IMG:
@@ -1247,6 +1283,7 @@ class LeggedRobot(BaseTask):
             [type]: [description]
         """
         if self.cfg.terrain.mesh_type == "plane":
+            assert(False)
             return torch.zeros(
                 self.num_envs,
                 self.num_height_points,
@@ -1276,13 +1313,17 @@ class LeggedRobot(BaseTask):
         px = torch.clip(px, 0, self.height_samples.shape[0] - 2)
         py = torch.clip(py, 0, self.height_samples.shape[1] - 2)
 
+        # print("Unique heights: ", torch.unique(self.height_samples) * self.terrain.cfg.vertical_scale)
         heights1 = self.height_samples[px, py]
         heights2 = self.height_samples[px + 1, py]
         heights3 = self.height_samples[px, py + 1]
         heights = torch.min(heights1, heights2)
         heights = torch.min(heights, heights3)
 
-        return heights.view(self.num_envs, -1) * self.terrain.cfg.vertical_scale
+
+        heights = heights.view(self.num_envs, -1) * self.terrain.cfg.vertical_scale
+
+        return heights
 
     # ------------ reward functions----------------
     def _reward_lin_vel_z(self):

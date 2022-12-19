@@ -43,10 +43,10 @@ class AlienGoCameraMixin:
         self.floating_cam = None
         super().__init__(*args, **kwargs)
 
-    def init_aux_cameras(self):
-        if os.environ.get("ISAAC_FOLLOW_CAM", "False") == "True":
+    def init_aux_cameras(self, follow_cam=False, float_cam=False):
+        if follow_cam:
             self.follow_cam, follow_trans = self.make_handle_trans(
-                600, 400, 0, (1.0, -1.0, 0.0), (0.0, 0.0, 3 * 3.14 / 4)
+                1920, 1080, 0, (1.0, -1.0, 0.0), (0.0, 0.0, 3 * 3.14 / 4)
             )
             body_handle = self.gym.find_actor_rigid_body_handle(
                 self.envs[0], self.actor_handles[0], "base"
@@ -59,7 +59,7 @@ class AlienGoCameraMixin:
                 gymapi.FOLLOW_POSITION,
             )
 
-        if os.environ.get("ISAAC_FLOATING_CAM", "False") == "True":
+        if float_cam:
             self.floating_cam, _ = self.make_handle_trans(
                 # 1280, 720, 0, (0, 0, 0), (0, 0, 0), hfov=50
                 1920, 1080, 0, (0, 0, 0), (0, 0, 0)
@@ -94,28 +94,44 @@ class Aliengo(AlienGoCameraMixin, LeggedRobot):
         self.camera_handles = []
 
         print("ALIENGO INIT")
+        # follow_cam, follow_trans = self.make_handle_trans(1920, 1080, 0, (1.0, -1.0, 0.0), (0.0, 0.0, 3*3.14/4))
+        # follow_cam, follow_trans = self.make_handle_trans((1920, 1080), 0, (0.0, 0.0, 2.0), (0.0, 3.14/2, 0.0))
+        # self.follow_cam = follow_cam
+        # body_handle = self.gym.find_actor_rigid_body_handle(
+        #     self.envs[0], self.actor_handles[0], "base"
+        # )
+
+        # self.gym.attach_camera_to_body(
+        #     follow_cam,  # camera_handle,
+        #     self.envs[0],
+        #     body_handle,
+        #     follow_trans,
+        #     gymapi.FOLLOW_POSITION,
+        # )
+
+        self.init_aux_cameras(cfg.env.follow_cam, cfg.env.float_cam)
 
         if cfg.env.train_type == "lbc":
-            print("INITIALIZING CAMERAS")
-            for env_idx in range(self.num_envs):
+            # print("INITIALIZING 2 CAMERAS")
+            for i in range(self.num_envs):
+                
+                res = cfg.env.camera_res
+                cam1, trans1 = self.make_handle_trans(res[0], res[1], i, (0.35, 0.0, 0.0), (0.0, 3.14/6, 0))
+                
+                self.camera_handles.append(cam1)
+
                 body_handle = self.gym.find_actor_rigid_body_handle(
                     self.envs[env_idx], self.actor_handles[env_idx], "base"
                 )
 
-                width, height = cfg.env.camera_res
-                camera_handle, local_transform = self.make_handle_trans(
-                    width, height, env_idx, (0.35, 0.0, 0.0), (0.0, 3.14 / 6, 0.0)
-                )
-
                 self.gym.attach_camera_to_body(
-                    camera_handle,  # camera_handle,
-                    self.envs[env_idx],
+                    cam1,  # camera_handle,
+                    self.envs[i],
                     body_handle,
-                    local_transform,
+                    trans1,
                     gymapi.FOLLOW_TRANSFORM,
                 )
 
-        self.init_aux_cameras()
 
     def reset_idx(self, env_ids):
         super().reset_idx(env_ids)

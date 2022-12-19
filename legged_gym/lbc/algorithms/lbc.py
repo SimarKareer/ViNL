@@ -136,10 +136,34 @@ class LBC:
 
         loss.backward()
         self.optimizer.step()
+    
+    def intensify(self, x, bump, thresh):
+        if x > thresh:
+            ans = bump
+        elif x < -thresh:
+            ans = -bump
+        else:
+            ans = 0
+
+        return ans
 
     def act_inference(self, obs):
+        # print("OBS: ", obs)
         if self.kin_nav_policy is not None:
             obs = self.update_cmds(obs)
+        
+        # obs["proprioception"][0, 9] = 0.7 if obs["proprioception"][0, 9] > 0.2 else 0
+        # obs["proprioception"][0, 10] = 0.7 if obs["proprioception"][0, 10] > 0.2 else 0
+        # obs["proprioception"][0, 11] = 0.7 if obs["proprioception"][0, 11] > 0.2 else 0
+
+        # print("lin vel x: ", obs["proprioception"][0, 9])
+        # print("Ang vel: ", obs["proprioception"][0, 11])
+        # obs["proprioception"][0, 9] = self.intensify(obs["proprioception"][0, 9], 0.8, 0.15)
+        # # obs["proprioception"][0, 9] = self.intensify(obs["proprioception"][0, 9])
+        # obs["proprioception"][0, 11] = self.intensify(obs["proprioception"][0, 11], 0.2, 0.05)
+        # print("lin vel x: ", obs["proprioception"][0, 9])
+        # print("Ang vel: ", obs["proprioception"][0, 11])
+        # print("-"*100)
 
         if isinstance(obs, torch.Tensor):
             prop = obs[:, :48]
@@ -155,7 +179,7 @@ class LBC:
         )
 
         with torch.no_grad():
-            actions = self.actor.act(prop, extero_encoding)
+            actions = self.actor.act_inference(prop, extero_encoding)
 
         return actions
 
@@ -186,6 +210,13 @@ class LBC:
             # Formula: velocity = dist / time_step
             self.lin_vel = lin_dist / (NAV_INTERVAL / 50.0)
             self.ang_vel = ang_dist / (NAV_INTERVAL / 50.0)
+
+            # print(self.lin_vel, self.ang_vel)
+            # if self.ang_vel > 0.5 or self.ang_vel < -0.5:
+            #     self.lin_vel = 0.3
+
+            print("LIN VEL ANG VEL: ", self.lin_vel, self.ang_vel)
+            print("-"*100)
 
             if PRINT_RT:
                 rt = obs["rho_theta"].cpu().numpy().tolist()
