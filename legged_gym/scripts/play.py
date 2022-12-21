@@ -43,7 +43,8 @@ def manual_save_im(env, path):
         env.sim,
         env.envs[0],
         # env.camera_handles2[1],
-        env.follow_cam,
+        # env.follow_cam,
+        env.floating_cam,
         gymapi.IMAGE_COLOR,
     )
     im = gymtorch.wrap_tensor(im)
@@ -64,6 +65,8 @@ def play(args):
     os.environ["ISAAC_SEED"] = str(args.seed)
     os.environ["ISAAC_EPISODE_ID"] = str(args.episode_id)
     os.environ["ISAAC_NUM_COMPLETED_EPS"] = "0"
+    scene = os.path.basename(args.map).split(".")[0]
+    os.environ["ISAAC_MAP_NAME"] = scene
     os.environ["ISAAC_EVAL_DIR"] = args.eval_dir
     (
         os.environ["ISAAC_BLOCK_MIN_HEIGHT"],
@@ -75,6 +78,7 @@ def play(args):
 
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     env_cfg.env.follow_cam = True
+    env_cfg.env.float_cam = True
     if isinstance(env_cfg, AliengoNavCfg):
         env_cfg.terrain.map_path = args.map
     env_cfg.terrain.no_blocks = args.no_blocks

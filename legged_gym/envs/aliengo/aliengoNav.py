@@ -33,7 +33,7 @@ import cv2
 import numpy as np
 import torch
 
-from isaacgym import gymapi, gymtorch
+from isaacgym import gymapi, gymtorch, gymutil
 from legged_gym.envs.base.legged_robot_nav import LeggedRobotNav
 
 from .aliengo import AlienGoCameraMixin
@@ -79,6 +79,40 @@ class AliengoNav(AlienGoCameraMixin, LeggedRobotNav):
                     )
 
         self.floating_cam_moved = False
+
+        x0, y0 = -1.1, -5.9
+        x1, y1 = x0 - 4.75, y0 + 4.5
+        xsBounds = [x0, x0, x1, x1]
+        ysBounds = [y0, y1, y0, y1]
+        self.draw_spheres(xsBounds, ysBounds)
+        def pixel_to_isaac(pixel):
+            return 0.0587638 * pixel + -6.451
+
+        xs, ys = self.terrain.shortest_path
+
+        xs = [pixel_to_isaac(item) for item in xs]
+        ys = [pixel_to_isaac(item) for item in ys]
+        self.draw_spheres(xs, ys)
+        
+        
+    def draw_spheres(self, xs, ys):
+        for x, y in zip(xs, ys):
+            trans = gymapi.Transform()
+            trans.p.x = x
+            trans.p.y = y
+            trans.p.z = 0
+
+            start_sphere_geom = gymutil.WireframeSphereGeometry(
+                0.05, 20, 20, trans, color=(0, 0, 1)
+            )
+
+            gymutil.draw_lines(
+                start_sphere_geom,
+                self.gym,
+                self.viewer,
+                self.envs[0],
+                trans,
+            )
 
     def step(self, actions):
         ret = super().step(actions)

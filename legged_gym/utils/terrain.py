@@ -96,6 +96,20 @@ class Terrain:
             self.height_field_raw = self.block_terrain(1600)
 
             im = np.array(imageio.v2.imread(cfg.map_path), dtype=np.int16)
+            if int(os.environ["ISAAC_EPISODE_ID"]) != -10:
+                self.shortest_path = im.copy()
+                scene = os.environ["ISAAC_MAP_NAME"]
+                episode_id = int(os.environ["ISAAC_EPISODE_ID"])
+
+                matching_files = glob.glob(f"episodes/{scene}_{episode_id}_*png")
+                assert(len(matching_files) == 1)
+                shortest_path_im = np.array(imageio.v2.imread(matching_files[0]), dtype=np.int16)
+                mask = np.all(shortest_path_im == np.array([0, 0, 255])[None, None, :], axis=2)
+                self.shortest_path = np.where(mask)
+
+                # breakpoint()
+
+
             im = im[:, :, 3]
             scaled_im = im.repeat(3, axis=0).repeat(3, axis=1)
             # scaled_im = im

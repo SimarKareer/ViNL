@@ -68,3 +68,6 @@ runs
 # other
 *.egg-info
 __pycache__
+
+evaluation_metrics*
+submodules/isaacgym

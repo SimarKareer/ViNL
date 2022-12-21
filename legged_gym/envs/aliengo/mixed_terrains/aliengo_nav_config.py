@@ -50,7 +50,7 @@ class AliengoNavCfg(LeggedRobotCfg):
         num_privileged_obs = None  # 187
         train_type = "lbc"  # standard, priv, lbc
         episode_length_s = 125  # episode length in seconds
-        use_dm = False
+        use_dm = True # Only true when running DM baselines
 
         follow_cam=True
         float_cam=False
@@ -149,13 +149,14 @@ class AliengoNavCfgAlg(LeggedRobotCfgPPO):
         # resume_path = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Aug05_12-59-13_ObsEncDM/model_4500.pt"
         # resume_path = "weights/Sep11_21-26-00_ObsEncDM_model_1150_19.086456518173218.pt"
         # resume_path = "weights/lbc.pt"
+
         resume_path = "weights/Sep11_23-48-28_debug_model_10000_16.232642258265987.pt"
 
 
         teacher_policy = "weights/Sep11_21-26-00_ObsEncDM_model_1150_19.086456518173218.pt"
         kin_nav_policy = "weights/kinNav.pth"
         # alt_ckpt = "/home/simar/Projects/isaacVL/localDev/legged_gym/logs/obs_aliengo/Aug05_12-59-13_ObsEncDM/model_4500.pt"
-        alt_ckpt = None
+        alt_ckpt = "weights/Sep11_21-26-00_ObsEncDM_model_1150_19.086456518173218.pt" # if alt_ckpt is on then use_dm should be on.  Otherwise use_dm = False
         # alt_ckpt = "weights/lbc.pt"
 
     class lbc(LeggedRobotCfgPPO.lbc):
