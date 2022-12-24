@@ -87,3 +87,13 @@ Helpful Tips:
 
 ## Acknowledgements
 This repo is forked from legged gym.  We rely on [rsl_rl](https://github.com/leggedrobotics/rsl_rl) for rl algorithm implementation and isaacgym as our simulator.  For information about how to add new tasks, robots, etc see [legged_gym](https://leggedrobotics.github.io/legged_gym/)
+
+## Citation
+```
+@inproceedings{kareer2022vinl,
+    title={ViNL: Visual Navigation and Locomotion Over Obstacles}, 
+    author={Simar Kareer and Naoki Yokoyama and Dhruv Batra and Sehoon Ha and Joanne Truong}, 
+    journal={arXiv preprint arXiv:2210.14791},
+    year={2022}
+}
+```
