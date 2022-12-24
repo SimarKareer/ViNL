@@ -1,5 +1,5 @@
 # ViNL: Visual Navigation and Locomotion over Obstacles
-Code for our paper [ViNL: Visual Navigation and Locomotion over Obstacles](https://arxiv.org/abs/2210.14791).  [Website Link](http://www.joannetruong.com/projects/vinl.html)
+Code for our paper [ViNL: Visual Navigation and Locomotion over Obstacles](https://arxiv.org/abs/2210.14791).  [Project Page](http://www.joannetruong.com/projects/vinl.html)
 
 Simar Kareer*, Naoki Yokoyama*, Dhruv Batra, Sehoon Ha, Joanne Truong
 
