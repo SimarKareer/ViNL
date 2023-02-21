@@ -3,7 +3,7 @@ Code for our paper [ViNL: Visual Navigation and Locomotion over Obstacles](https
 
 Simar Kareer*, Naoki Yokoyama*, Dhruv Batra, Sehoon Ha, Joanne Truong
 
-## What is ViNL
+## What is ViNL?
 ![](resources/readme/CatAndMimic.png)
 
 Ever notice how cats can navigate while skillfully stepping over obstacles?
