@@ -43,7 +43,7 @@ Install all submodules via
 Install `requirements.txt` for each submodule and main repo.
 <!-- Put a set of models on google drive for evaluation -->
 
-### To train nav policy from scratch
+### Nav Policy training code installation
 Use this [repo](https://github.com/naokiyokoyama/robot-nav/tree/main) to train the navigation policy, and use this version of habitat [lab](https://github.com/joannetruong/habitat-lab/tree/vinl)
 
 
