@@ -72,7 +72,7 @@ Training occurs in stages.  At each stage we include the checkpoint of the previ
 1. Train a general purpose rough terrain walking policy (with privileged terrain info) `python legged_gym/scripts/train.py --task=aliengo_rough`
 2. Train a obstacle orriented walking policy (with privileged terrain info) `python legged_gym/scripts/train.py --task=aliengo_obs`
 3. Train a obstacle orriented walking policy (no privileged info terrain info).  This phase of training uses vision instead of a terrain map. `python legged_gym/scripts/train.py --task=aliengo_lbc`
-4. Train a navigation policy in habitat-sim
+4. Train a navigation policy using this [repo](https://github.com/naokiyokoyama/robot-nav/tree/main), and this version of [habitat lab](https://github.com/joannetruong/habitat-lab/tree/vinl)
 <!-- Add link to checkpoint for each stage of training. -->
 
 To invidually evalauate any of these policies run `python legged_gym/scripts/play.py --task=<task here>`.
